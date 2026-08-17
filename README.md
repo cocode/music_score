@@ -1,0 +1,52 @@
+# Dependency-free music score SVG
+
+This is a deliberately small renderer for engraved-looking, single-staff
+melodies. It uses only Python’s standard library and emits plain SVG. Open the
+generated `score.svg` in a browser or import it into a vector editor.
+
+In standard music-notation terminology, the vertical lines attached to note
+heads are **stems**. The usually horizontal, sometimes gently sloped connector
+joining short notes is a **beam**; all notes in one beamed group share a stem
+direction. The renderer uses a white page by default and chooses one common
+direction for each beam.
+
+```sh
+python example.py
+```
+
+To render the best-effort transcription of the supplied historical plate:
+
+```sh
+python original_transcription.py
+```
+
+That command writes `original_transcription.svg` and prints the note names to
+the terminal. The transcription is approximate: the scan is low-resolution,
+some stems and noteheads overlap, and the engraving includes ornaments and
+rhythmic details that are difficult to distinguish from the image alone.
+
+The basic model is `Score` → `System` → `Bar` → `Note`:
+
+```python
+from music_score import Bar, Note, Score, System
+
+score = Score([
+    System([
+        Bar([Note("G4", 8), Note("A4", 8), Note("B4", 8), Note("D5", 8)]),
+        Bar([Note("C5", 4), Note("B4", 8), Note("A4", 8)], final=True),
+    ], number="1.", key="F#", time="3/8"),
+], title="A little waltz")
+
+score.write_svg("my-score.svg")
+```
+
+Supported durations are whole, half, quarter, eighth, and sixteenth notes.
+Use `Note("F#4", 8)` or `Note("Bb4", 4)` for accidentals, and
+`Note(duration=4, rest=True)` for a rest. `Bar` supports `repeat_start`,
+`repeat_end`, `final`, and a small text annotation through `rehearsal`.
+
+The renderer uses the Unicode treble-clef and accidental symbols with common
+music-font fallbacks. If your browser does not have a music font installed,
+installing a font such as Bravura or Noto Music will improve those symbols;
+the staff, noteheads, stems, beams, ledger lines, and barlines remain ordinary
+SVG shapes.
