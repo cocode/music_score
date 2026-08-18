@@ -88,7 +88,7 @@
       "time": "3/8",
       "bars": [
         {"notes": ["A5:16", "G5:16"]},
-        {"notes": ["F5:8", "G5:16", "E5:16", "F5:16"], "repeat_start": true, "segno_start": true},
+        {"notes": ["F5:8.", "G5:16", "E5:16", "F5:16"], "repeat_start": true, "segno_start": true},
         {"notes": ["D5:8", {"pitch": "A4", "duration": 8, "beam_break_after": true}, "D5:16", "F5:16"]},
         {"notes": ["E5:8", {"pitch": "A4", "duration": 8, "beam_break_after": true}, "E5:16", "G5:16"]},
         {"notes": ["F5:16", "E5:16", "D5:16", "C5:16", "D5:16", "E5:16"]}
@@ -98,9 +98,9 @@
       "key": "D",
       "time": "3/8",
       "bars": [
-        {"notes": ["F5:8", "G5:16", "D5:16", "F5:16"]},
+        {"notes": ["F5:8.", "G5:16", "D5:16", "F5:16"]},
         {"notes": ["D5:8",  {"pitch": "A4", "duration": 8, "beam_break_after": true}, "D5:16", "F5:16"]},
-        {"notes": ["E5:16", "A5:16", "G#5:16", "A5:8", "G♮5:16", "E5:16"]},
+        {"notes": ["E5:16", "A5:16", "G#5:16", "A5:16", "G♮5:16", "E5:16"]},
         {"notes": ["D5:4"], "repeat_both": true}
       ]
     },
@@ -119,10 +119,10 @@
       "key": "D",
       "time": "3/8",
       "bars": [
-        {"notes": ["A4:8", "B4:8", "C#5:8", "D5:8", "E5:8", "F#5:8"]},
-        {"notes": ["G5:8", "F#5:8", "E5:8", "D5:8", "C#5:8", "B4:8"]},
-        {"notes": ["A4:8", "B4:8", "C#5:8", "D5:8", "E5:8", "F#5:8"]},
-        {"notes": ["F#5:8", "E5:8", "D5:8", "C#5:8", "B4:8", "A4:8"], "repeat_end": true, "segno": true, "rehearsal": "Dal Segno."}
+        {"notes": ["G5:16", "F5:16", "G5:16", "A5:16", "B5:16", "G5:16"]},
+        {"notes": ["F5:16", "E5:16", "F5:16", "G5:16", "A5:16", "G5:16"]},
+        {"notes": ["E5:16", "A5:16", "G#5:16", "A5:16", "G♮5:16", "E5:16"]},
+        {"notes": ["D5:16", "A4:16", "B4:16", "C5:16", "D5:16", "E5:16"], "repeat_end": true, "segno": true, "rehearsal": "Dal Segno."}
       ]
     }
   ]
