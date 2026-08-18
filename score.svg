@@ -9,111 +9,91 @@
   <line x1="54" y1="106" x2="846" y2="106" stroke="#34312d" stroke-width="1.15" stroke-linecap="round"/>
   <line x1="54" y1="115" x2="846" y2="115" stroke="#34312d" stroke-width="1.15" stroke-linecap="round"/>
   <line x1="54" y1="124" x2="846" y2="124" stroke="#34312d" stroke-width="1.15" stroke-linecap="round"/>
-  <text x="61" y="125" fill="#34312d" font-family="Bravura, Noto Music, DejaVu Sans, serif" font-size="49">𝄞</text>
-  <text x="95" y="115" fill="#34312d" font-family="Bravura, Noto Music, DejaVu Sans, serif" font-size="18">♯</text>
-  <text x="105" y="118" fill="#34312d" font-family="Bravura, Noto Music, DejaVu Sans, serif" font-size="18">♯</text>
-  <text x="115" y="112" fill="#34312d" font-family="Bravura, Noto Music, DejaVu Sans, serif" font-size="18">♯</text>
-  <text x="125" y="118" fill="#34312d" font-family="Bravura, Noto Music, DejaVu Sans, serif" font-size="18">♯</text>
-  <text x="135" y="112" fill="#34312d" font-family="Bravura, Noto Music, DejaVu Sans, serif" font-size="18">♯</text>
-  <text x="145" y="115" fill="#34312d" font-family="Bravura, Noto Music, DejaVu Sans, serif" font-size="18">♯</text>
-  <text x="171" y="106" fill="#34312d" font-family="Georgia, serif" font-size="19" font-weight="bold">3</text>
-  <text x="171" y="126" fill="#34312d" font-family="Georgia, serif" font-size="19" font-weight="bold">8</text>
-  <path d="M 226.878 71.575 L 412.153 68.425 L 412.153 72.425 L 226.878 75.575 Z" fill="#34312d"/>
-  <ellipse cx="223.528" cy="97" rx="3.35" ry="2.35" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
-  <line x1="226.878" y1="94" x2="226.878" y2="71.575" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
-  <ellipse cx="260.583" cy="92.5" rx="3.35" ry="2.35" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
-  <line x1="263.933" y1="89.5" x2="263.933" y2="70.945" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
-  <ellipse cx="297.638" cy="88" rx="3.35" ry="2.35" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
-  <line x1="300.988" y1="85" x2="300.988" y2="70.315" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
-  <line x1="327.693" y1="79" x2="341.693" y2="79" stroke="#34312d" stroke-width="1.15"/>
-  <ellipse cx="334.693" cy="79" rx="3.35" ry="2.35" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
-  <line x1="338.043" y1="76" x2="338.043" y2="69.685" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
-  <line x1="364.748" y1="79" x2="378.748" y2="79" stroke="#34312d" stroke-width="1.15"/>
-  <ellipse cx="371.748" cy="83.5" rx="3.35" ry="2.35" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
-  <line x1="375.098" y1="80.5" x2="375.098" y2="69.055" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
-  <ellipse cx="408.803" cy="88" rx="3.35" ry="2.35" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
-  <line x1="412.153" y1="85" x2="412.153" y2="68.425" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
-  <line x1="435.33" y1="88" x2="435.33" y2="124" stroke="#34312d" stroke-width="1.2"/>
-  <path d="M 458.508 142.787 L 643.783 141.213 L 643.783 137.213 L 458.508 138.787 Z" fill="#34312d"/>
-  <ellipse cx="461.858" cy="92.5" rx="3.35" ry="2.35" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
-  <line x1="458.508" y1="95.5" x2="458.508" y2="142.787" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
-  <ellipse cx="498.913" cy="88" rx="3.35" ry="2.35" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
-  <line x1="495.563" y1="91" x2="495.563" y2="142.472" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
-  <line x1="528.968" y1="79" x2="542.968" y2="79" stroke="#34312d" stroke-width="1.15"/>
-  <ellipse cx="535.968" cy="83.5" rx="3.35" ry="2.35" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
-  <line x1="532.618" y1="86.5" x2="532.618" y2="142.157" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
-  <line x1="566.023" y1="79" x2="580.023" y2="79" stroke="#34312d" stroke-width="1.15"/>
-  <ellipse cx="573.023" cy="79" rx="3.35" ry="2.35" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
-  <line x1="569.673" y1="82" x2="569.673" y2="141.843" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
-  <line x1="603.078" y1="79" x2="617.078" y2="79" stroke="#34312d" stroke-width="1.15"/>
-  <ellipse cx="610.078" cy="83.5" rx="3.35" ry="2.35" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
-  <line x1="606.728" y1="86.5" x2="606.728" y2="141.528" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
-  <ellipse cx="647.133" cy="88" rx="3.35" ry="2.35" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
-  <line x1="643.783" y1="91" x2="643.783" y2="141.213" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
-  <line x1="673.66" y1="88" x2="673.66" y2="124" stroke="#34312d" stroke-width="1.2"/>
-  <ellipse cx="707.217" cy="92.5" rx="3.35" ry="2.35" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
-  <line x1="710.567" y1="89.5" x2="710.567" y2="70" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
-  <ellipse cx="758.33" cy="97" rx="3.35" ry="2.35" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
-  <line x1="761.68" y1="94" x2="761.68" y2="70" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
-  <text x="797.443" y="107.5" fill="#34312d" font-family="Bravura, Noto Music, DejaVu Sans, serif" font-size="17">♯</text>
-  <ellipse cx="809.443" cy="101.5" rx="3.35" ry="2.35" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
-  <line x1="812.793" y1="98.5" x2="812.793" y2="70" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
+  <text x="61" y="131" fill="#34312d" font-family="Bravura, Noto Music, DejaVu Sans, serif" font-size="73.5">𝄞</text>
+  <text x="95" y="94" fill="#34312d" font-family="Bravura, Noto Music, DejaVu Sans, serif" font-size="18">♯</text>
+  <text x="105" y="107.5" fill="#34312d" font-family="Bravura, Noto Music, DejaVu Sans, serif" font-size="18">♯</text>
+  <text x="131" y="102" fill="#34312d" font-family="Georgia, serif" font-size="28.5" font-weight="bold">3</text>
+  <text x="131" y="126" fill="#34312d" font-family="Georgia, serif" font-size="28.5" font-weight="bold">8</text>
+  <path d="M 188.757 80.5 L 386.33 71.5 L 386.33 75.5 L 188.757 84.5 Z" fill="#34312d"/>
+  <ellipse cx="184.757" cy="115" rx="4" ry="3.9" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
+  <line x1="188.757" y1="112" x2="188.757" y2="80.5" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
+  <ellipse cx="224.272" cy="110.5" rx="4" ry="3.9" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
+  <line x1="228.272" y1="107.5" x2="228.272" y2="78.7" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
+  <ellipse cx="263.786" cy="106" rx="4" ry="3.9" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
+  <line x1="267.786" y1="103" x2="267.786" y2="76.9" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
+  <ellipse cx="303.301" cy="97" rx="4" ry="3.9" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
+  <line x1="307.301" y1="94" x2="307.301" y2="75.1" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
+  <ellipse cx="342.816" cy="101.5" rx="4" ry="3.9" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
+  <line x1="346.816" y1="98.5" x2="346.816" y2="73.3" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
+  <ellipse cx="382.33" cy="106" rx="4" ry="3.9" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
+  <line x1="386.33" y1="103" x2="386.33" y2="71.5" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
+  <line x1="410.087" y1="88" x2="410.087" y2="124" stroke="#34312d" stroke-width="1.2"/>
+  <path d="M 433.845 145 L 631.417 140.5 L 631.417 136.5 L 433.845 141 Z" fill="#34312d"/>
+  <ellipse cx="437.845" cy="110.5" rx="4" ry="3.9" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
+  <line x1="433.845" y1="113.5" x2="433.845" y2="145" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
+  <ellipse cx="477.359" cy="106" rx="4" ry="3.9" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
+  <line x1="473.359" y1="109" x2="473.359" y2="144.1" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
+  <ellipse cx="516.874" cy="101.5" rx="4" ry="3.9" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
+  <line x1="512.874" y1="104.5" x2="512.874" y2="143.2" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
+  <ellipse cx="556.388" cy="97" rx="4" ry="3.9" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
+  <line x1="552.388" y1="100" x2="552.388" y2="142.3" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
+  <ellipse cx="595.903" cy="101.5" rx="4" ry="3.9" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
+  <line x1="591.903" y1="104.5" x2="591.903" y2="141.4" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
+  <ellipse cx="635.417" cy="106" rx="4" ry="3.9" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
+  <line x1="631.417" y1="109" x2="631.417" y2="140.5" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
+  <line x1="663.175" y1="88" x2="663.175" y2="124" stroke="#34312d" stroke-width="1.2"/>
+  <ellipse cx="698.479" cy="110.5" rx="4" ry="3.9" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
+  <line x1="702.479" y1="107.5" x2="702.479" y2="76" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
+  <ellipse cx="753.087" cy="115" rx="4" ry="3.9" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
+  <line x1="757.087" y1="112" x2="757.087" y2="80.5" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
+  <ellipse cx="807.696" cy="119.5" rx="4" ry="3.9" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
+  <line x1="811.696" y1="116.5" x2="811.696" y2="85" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
   <line x1="843" y1="88" x2="843" y2="124" stroke="#34312d" stroke-width="2.0"/>
   <line x1="54" y1="228" x2="846" y2="228" stroke="#34312d" stroke-width="1.15" stroke-linecap="round"/>
   <line x1="54" y1="237" x2="846" y2="237" stroke="#34312d" stroke-width="1.15" stroke-linecap="round"/>
   <line x1="54" y1="246" x2="846" y2="246" stroke="#34312d" stroke-width="1.15" stroke-linecap="round"/>
   <line x1="54" y1="255" x2="846" y2="255" stroke="#34312d" stroke-width="1.15" stroke-linecap="round"/>
   <line x1="54" y1="264" x2="846" y2="264" stroke="#34312d" stroke-width="1.15" stroke-linecap="round"/>
-  <text x="61" y="265" fill="#34312d" font-family="Bravura, Noto Music, DejaVu Sans, serif" font-size="49">𝄞</text>
-  <text x="95" y="255" fill="#34312d" font-family="Bravura, Noto Music, DejaVu Sans, serif" font-size="18">♯</text>
-  <text x="105" y="258" fill="#34312d" font-family="Bravura, Noto Music, DejaVu Sans, serif" font-size="18">♯</text>
-  <text x="115" y="252" fill="#34312d" font-family="Bravura, Noto Music, DejaVu Sans, serif" font-size="18">♯</text>
-  <text x="125" y="258" fill="#34312d" font-family="Bravura, Noto Music, DejaVu Sans, serif" font-size="18">♯</text>
-  <text x="135" y="252" fill="#34312d" font-family="Bravura, Noto Music, DejaVu Sans, serif" font-size="18">♯</text>
-  <text x="145" y="255" fill="#34312d" font-family="Bravura, Noto Music, DejaVu Sans, serif" font-size="18">♯</text>
-  <text x="171" y="246" fill="#34312d" font-family="Georgia, serif" font-size="19" font-weight="bold">3</text>
-  <text x="171" y="266" fill="#34312d" font-family="Georgia, serif" font-size="19" font-weight="bold">8</text>
-  <path d="M 226.878 206.062 L 412.153 213.938 L 412.153 217.938 L 226.878 210.062 Z" fill="#34312d"/>
-  <line x1="216.528" y1="219" x2="230.528" y2="219" stroke="#34312d" stroke-width="1.15"/>
-  <ellipse cx="223.528" cy="219" rx="3.35" ry="2.35" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
-  <line x1="226.878" y1="216" x2="226.878" y2="206.062" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
-  <line x1="253.583" y1="219" x2="267.583" y2="219" stroke="#34312d" stroke-width="1.15"/>
-  <ellipse cx="260.583" cy="223.5" rx="3.35" ry="2.35" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
-  <line x1="263.933" y1="220.5" x2="263.933" y2="207.637" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
-  <ellipse cx="297.638" cy="228" rx="3.35" ry="2.35" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
-  <line x1="300.988" y1="225" x2="300.988" y2="209.213" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
-  <ellipse cx="334.693" cy="232.5" rx="3.35" ry="2.35" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
-  <line x1="338.043" y1="229.5" x2="338.043" y2="210.787" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
-  <ellipse cx="371.748" cy="237" rx="3.35" ry="2.35" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
-  <line x1="375.098" y1="234" x2="375.098" y2="212.363" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
-  <text x="396.803" y="247.5" fill="#34312d" font-family="Bravura, Noto Music, DejaVu Sans, serif" font-size="17">♯</text>
-  <ellipse cx="408.803" cy="241.5" rx="3.35" ry="2.35" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
-  <line x1="412.153" y1="238.5" x2="412.153" y2="213.938" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
-  <line x1="435.33" y1="228" x2="435.33" y2="264" stroke="#34312d" stroke-width="1.2"/>
-  <path d="M 465.208 211.575 L 650.483 208.425 L 650.483 212.425 L 465.208 215.575 Z" fill="#34312d"/>
-  <ellipse cx="461.858" cy="237" rx="3.35" ry="2.35" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
-  <line x1="465.208" y1="234" x2="465.208" y2="211.575" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
-  <ellipse cx="498.913" cy="232.5" rx="3.35" ry="2.35" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
-  <line x1="502.263" y1="229.5" x2="502.263" y2="210.945" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
-  <ellipse cx="535.968" cy="228" rx="3.35" ry="2.35" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
-  <line x1="539.318" y1="225" x2="539.318" y2="210.315" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
-  <line x1="566.023" y1="219" x2="580.023" y2="219" stroke="#34312d" stroke-width="1.15"/>
-  <ellipse cx="573.023" cy="219" rx="3.35" ry="2.35" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
-  <line x1="576.373" y1="216" x2="576.373" y2="209.685" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
-  <line x1="603.078" y1="219" x2="617.078" y2="219" stroke="#34312d" stroke-width="1.15"/>
-  <ellipse cx="610.078" cy="223.5" rx="3.35" ry="2.35" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
-  <line x1="613.428" y1="220.5" x2="613.428" y2="209.055" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
-  <ellipse cx="647.133" cy="228" rx="3.35" ry="2.35" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
-  <line x1="650.483" y1="225" x2="650.483" y2="208.425" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
-  <line x1="673.66" y1="228" x2="673.66" y2="264" stroke="#34312d" stroke-width="1.2"/>
-  <text x="554.495" y="290" fill="#34312d" text-anchor="middle" font-family="Georgia, Times New Roman, serif" font-size="13">Fine.</text>
-  <ellipse cx="707.217" cy="232.5" rx="3.35" ry="2.35" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
-  <line x1="710.567" y1="229.5" x2="710.567" y2="210" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
-  <ellipse cx="758.33" cy="237" rx="3.35" ry="2.35" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
-  <line x1="761.68" y1="234" x2="761.68" y2="210" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
-  <text x="797.443" y="247.5" fill="#34312d" font-family="Bravura, Noto Music, DejaVu Sans, serif" font-size="17">♯</text>
-  <ellipse cx="809.443" cy="241.5" rx="3.35" ry="2.35" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
-  <line x1="812.793" y1="238.5" x2="812.793" y2="210" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
+  <text x="61" y="271" fill="#34312d" font-family="Bravura, Noto Music, DejaVu Sans, serif" font-size="73.5">𝄞</text>
+  <text x="95" y="234" fill="#34312d" font-family="Bravura, Noto Music, DejaVu Sans, serif" font-size="18">♯</text>
+  <text x="105" y="247.5" fill="#34312d" font-family="Bravura, Noto Music, DejaVu Sans, serif" font-size="18">♯</text>
+  <text x="131" y="242" fill="#34312d" font-family="Georgia, serif" font-size="28.5" font-weight="bold">3</text>
+  <text x="131" y="266" fill="#34312d" font-family="Georgia, serif" font-size="28.5" font-weight="bold">8</text>
+  <path d="M 188.757 202.5 L 386.33 225 L 386.33 229 L 188.757 206.5 Z" fill="#34312d"/>
+  <ellipse cx="184.757" cy="237" rx="4" ry="3.9" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
+  <line x1="188.757" y1="234" x2="188.757" y2="202.5" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
+  <ellipse cx="224.272" cy="241.5" rx="4" ry="3.9" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
+  <line x1="228.272" y1="238.5" x2="228.272" y2="207" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
+  <ellipse cx="263.786" cy="246" rx="4" ry="3.9" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
+  <line x1="267.786" y1="243" x2="267.786" y2="211.5" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
+  <ellipse cx="303.301" cy="250.5" rx="4" ry="3.9" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
+  <line x1="307.301" y1="247.5" x2="307.301" y2="216" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
+  <ellipse cx="342.816" cy="255" rx="4" ry="3.9" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
+  <line x1="346.816" y1="252" x2="346.816" y2="220.5" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
+  <ellipse cx="382.33" cy="259.5" rx="4" ry="3.9" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
+  <line x1="386.33" y1="256.5" x2="386.33" y2="225" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
+  <line x1="410.087" y1="228" x2="410.087" y2="264" stroke="#34312d" stroke-width="1.2"/>
+  <path d="M 441.845 220.5 L 639.417 211.5 L 639.417 215.5 L 441.845 224.5 Z" fill="#34312d"/>
+  <ellipse cx="437.845" cy="255" rx="4" ry="3.9" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
+  <line x1="441.845" y1="252" x2="441.845" y2="220.5" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
+  <ellipse cx="477.359" cy="250.5" rx="4" ry="3.9" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
+  <line x1="481.359" y1="247.5" x2="481.359" y2="218.7" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
+  <ellipse cx="516.874" cy="246" rx="4" ry="3.9" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
+  <line x1="520.874" y1="243" x2="520.874" y2="216.9" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
+  <ellipse cx="556.388" cy="237" rx="4" ry="3.9" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
+  <line x1="560.388" y1="234" x2="560.388" y2="215.1" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
+  <ellipse cx="595.903" cy="241.5" rx="4" ry="3.9" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
+  <line x1="599.903" y1="238.5" x2="599.903" y2="213.3" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
+  <ellipse cx="635.417" cy="246" rx="4" ry="3.9" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
+  <line x1="639.417" y1="243" x2="639.417" y2="211.5" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
+  <line x1="663.175" y1="228" x2="663.175" y2="264" stroke="#34312d" stroke-width="1.2"/>
+  <text x="536.631" y="290" fill="#34312d" text-anchor="middle" font-family="Georgia, Times New Roman, serif" font-size="13">Fine.</text>
+  <ellipse cx="698.479" cy="250.5" rx="4" ry="3.9" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
+  <line x1="702.479" y1="247.5" x2="702.479" y2="216" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
+  <ellipse cx="753.087" cy="255" rx="4" ry="3.9" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
+  <line x1="757.087" y1="252" x2="757.087" y2="220.5" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
+  <ellipse cx="807.696" cy="259.5" rx="4" ry="3.9" fill="#34312d" stroke="#34312d" stroke-width="1.1"/>
+  <line x1="811.696" y1="256.5" x2="811.696" y2="225" stroke="#34312d" stroke-width="1.6" stroke-linecap="round"/>
   <line x1="843" y1="228" x2="843" y2="264" stroke="#34312d" stroke-width="2.0"/>
   <text x="450" y="317" text-anchor="middle" fill="#34312d" font-family="Georgia, Times New Roman, serif" font-size="12" font-weight="bold" letter-spacing="0.2">Engraved with Python and SVG</text>
 </svg>
