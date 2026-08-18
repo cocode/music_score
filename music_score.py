@@ -68,7 +68,10 @@ class Note:
     @property
     def step(self) -> int:
         letter, _, octave = self.parsed
-        return (octave - 4) * 7 + DIATONIC_FROM_C[letter] - 2
+        # B4 is the middle staff line. Keeping it at step zero makes the
+        # pitch-to-staff mapping agree with the treble clef: E4 is -4, C5 is
+        # +1, and F5 (the top line) is +4.
+        return (octave - 4) * 7 + DIATONIC_FROM_C[letter] - 6
 
     @property
     def display_accidental(self) -> str:
@@ -111,8 +114,8 @@ class Style:
     staff_gap: float = 9.0
     stem: float = 1.6
     staff_width: float = 1.15
-    note_width: float = 6.7
-    note_height: float = 4.7
+    note_width: float = 8.0
+    note_height: float = 7.8
     bar_width: float = 1.2
     page_width: float = 900.0
     margin_x: float = 54.0
@@ -234,19 +237,20 @@ class Score:
 
         # Unicode music symbols keep the library font-independent at the SVG
         # level while allowing a high-quality installed music font to be used.
-        svg.text(left + 7, staff_top + 37, "𝄞", fill=ink,
-                 font_family="Bravura, Noto Music, DejaVu Sans, serif", font_size=49)
+        svg.text(left + 7, staff_top + 43, "𝄞", fill=ink,
+                 font_family="Bravura, Noto Music, DejaVu Sans, serif", font_size=73.5)
         key_x = left + 41
+        key_steps = (4, 1, 5, 2, 6, 3, 0)  # F, C, G, D, A, E, B in treble clef.
         for index, accidental in enumerate(self._key_accidentals(system.key)):
             symbol = "♯" if accidental == "#" else "♭"
-            step = (index * 2 + 1) % 7
-            svg.text(key_x + index * 10, staff_top + 30 - (step % 3) * 3, symbol, fill=ink,
+            y = staff_top + 2 * s.staff_gap - key_steps[index] * (s.staff_gap / 2) + 6
+            svg.text(key_x + index * 10, y, symbol, fill=ink,
                      font_family="Bravura, Noto Music, DejaVu Sans, serif", font_size=18)
         time_x = key_x + len(self._key_accidentals(system.key)) * 10 + 16
         if system.time:
             numerator, denominator = system.time.split("/", 1)
-            svg.text(time_x, staff_top + 18, numerator, fill=ink, font_family="Georgia, serif", font_size=19, font_weight="bold")
-            svg.text(time_x, staff_top + 38, denominator, fill=ink, font_family="Georgia, serif", font_size=19, font_weight="bold")
+            svg.text(time_x, staff_top + 14, numerator, fill=ink, font_family="Georgia, serif", font_size=28.5, font_weight="bold")
+            svg.text(time_x, staff_top + 38, denominator, fill=ink, font_family="Georgia, serif", font_size=28.5, font_weight="bold")
 
         content_left = time_x + 26
         content_right = right - 3
@@ -330,7 +334,7 @@ class Score:
                 svg.rect(x - 5, y - 1.5, 10, 3, fill=ink)
             return
 
-        y = middle - note.step * (s.staff_gap / 2)
+        y = self._note_y(note, staff_top)
         self._ledger_lines(svg, x, y, staff_top)
         accidental = note.display_accidental
         if accidental:
@@ -343,12 +347,45 @@ class Score:
                     fill=ink if filled else "none", stroke=ink, stroke_width=1.1)
         if note.duration != 1:
             if stem_up is None:
-                stem_up = note.step < 5
+                stem_up = note.step < 0.5
             stem_x = x + s.note_width / 2 if stem_up else x - s.note_width / 2
             stem_y = y - 3 if stem_up else y + 3
+            is_beamed = stem_end is not None
             if stem_end is None:
-                stem_end = staff_top - 18 if stem_up else staff_top + 4 * s.staff_gap + 18
+                stem_end = self._default_stem_end(y, stem_up)
             svg.line(stem_x, stem_y, stem_x, stem_end, stroke=ink, stroke_width=s.stem, stroke_linecap="round")
+            # A short note outside a beamed group still needs its flag. Notes
+            # that received a beam endpoint are already connected by a beam.
+            if note.duration in (8, 16) and not is_beamed:
+                self._draw_flags(svg, stem_x, stem_end, stem_up, note.duration)
+
+    def _draw_flags(self, svg: SVG, stem_x: float, stem_end: float,
+                    stem_up: bool, duration: int) -> None:
+        """Draw one eighth-note flag or two sixteenth-note flags."""
+        ink = self.style.ink
+        count = 1 if duration == 8 else 2
+        for index in range(count):
+            offset = index * 5.0
+            if stem_up:
+                y = stem_end + offset
+                svg.path(
+                    f"M {stem_x:g} {y:g} q 7 2 10 7 q -5 -2 -10 -2 Z",
+                    fill=ink,
+                )
+            else:
+                y = stem_end - offset
+                svg.path(
+                    f"M {stem_x:g} {y:g} q -7 -2 -10 -7 q 5 2 10 2 Z",
+                    fill=ink,
+                )
+
+    def _note_y(self, note: Note, staff_top: float) -> float:
+        return staff_top + 2 * self.style.staff_gap - note.step * (self.style.staff_gap / 2)
+
+    def _default_stem_end(self, note_y: float, stem_up: bool) -> float:
+        stem_start = note_y - 3 if stem_up else note_y + 3
+        stem_length = 3.5 * self.style.staff_gap
+        return stem_start - stem_length if stem_up else stem_start + stem_length
 
     def _ledger_lines(self, svg: SVG, x: float, y: float, staff_top: float) -> None:
         s = self.style
@@ -382,7 +419,7 @@ class Score:
                 group.append((note, x))
             elif group:
                 if len(group) >= 2:
-                    stem_up = sum(note.step for note, _ in group) / len(group) < 4.5
+                    stem_up = sum(note.step for note, _ in group) / len(group) < 0.5
                     for _, note_x in group:
                         directions[note_x] = stem_up
                 group = []
@@ -416,13 +453,18 @@ class Score:
         staff_top: float,
         stem_up: bool,
     ) -> tuple[float, float]:
-        """Choose a restrained engraved slope from the first/last notes."""
-        s = self.style
-        base = staff_top - 18 if stem_up else staff_top + 4 * s.staff_gap + 18
-        first_y = staff_top + 2 * s.staff_gap - group[0][0].step * (s.staff_gap / 2)
-        last_y = staff_top + 2 * s.staff_gap - group[-1][0].step * (s.staff_gap / 2)
-        slope = max(-24.0, min(24.0, (last_y - first_y) * 0.35))
-        return base - slope / 2, base + slope / 2
+        """Connect the normal-length stems of the first and last notes.
+
+        Interior stems are then interpolated onto this line. This is the
+        usual engraved construction for a sloped beam: the endpoints retain
+        their ordinary stem length, while only the middle stems are adjusted.
+        """
+        first_y = self._note_y(group[0][0], staff_top)
+        last_y = self._note_y(group[-1][0], staff_top)
+        return (
+            self._default_stem_end(first_y, stem_up),
+            self._default_stem_end(last_y, stem_up),
+        )
 
     def _draw_beams(self, svg: SVG, positions: Sequence[tuple[Note, float]], staff_top: float,
                     beam_directions: dict[float, bool]) -> None:
@@ -455,29 +497,10 @@ class Score:
 
 
 def make_demo_score() -> Score:
-    """Return a compact example with the visual vocabulary of the reference."""
-    def n(*values: str) -> list[Note]:
-        return [Note(value[:-2], int(value[-1])) for value in values]
+    """Load the external example score for backwards compatibility."""
+    from render_score import score_from_file
 
-    systems = [
-        System([
-            Bar(n("G4:8", "A4:8", "B4:8", "D5:8", "C5:8", "B4:8")),
-            Bar(n("A4:8", "B4:8", "C5:8", "D5:8", "C5:8", "B4:8")),
-            Bar(n("A4:8", "G4:8", "F#4:8", "G4:8", "A4:8", "B4:8"), final=True),
-        ], number="1."),
-        System([
-            Bar(n("D5:8", "C5:8", "B4:8", "A4:8", "G4:8", "F#4:8")),
-            Bar(n("G4:8", "A4:8", "B4:8", "D5:8", "C5:8", "B4:8"), rehearsal="Fine."),
-            Bar(n("A4:4", "G4:4", "F#4:4"), final=True),
-        ]),
-        System([
-            Bar(n("G4:8", "B4:8", "D5:8", "G5:8", "F#5:8", "D5:8")),
-            Bar(n("C5:8", "B4:8", "A4:8", "G4:8", "F#4:8", "G4:8")),
-            Bar(n("A4:8", "B4:8", "C5:8", "D5:8", "E5:8", "F#5:8"), final=True),
-        ]),
-    ]
-    return Score(systems, title="Tunes adapted to the French Slow Waltz.",
-                 subtitle="A small SVG engraving example", footer="Engraved with Python and SVG")
+    return score_from_file("example_score.json")
 
 
 if __name__ == "__main__":

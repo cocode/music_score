@@ -10,6 +10,14 @@ joining short notes is a **beam**; all notes in one beamed group share a stem
 direction. The renderer uses a white page by default and chooses one common
 direction for each beam.
 
+Eighth and sixteenth notes are automatically beamed when adjacent in a group;
+an isolated eighth note is drawn with one flag, and an isolated sixteenth note
+with two flags.
+
+Key-signature accidentals are also placed on fixed staff positions. For
+example, in treble-clef D major, F-sharp is on the top line and C-sharp is in
+the third space; they are not interchangeable decorations.
+
 ```sh
 python example.py
 ```
@@ -24,6 +32,36 @@ That command writes `original_transcription.svg` and prints the note names to
 the terminal. The transcription is approximate: the scan is low-resolution,
 some stems and noteheads overlap, and the engraving includes ornaments and
 rhythmic details that are difficult to distinguish from the image alone.
+
+## JSON and command line
+
+The note data lives in [original_transcription.json](original_transcription.json)
+and [example_score.json](example_score.json), not in the drawing code. Render a
+file directly with:
+
+```sh
+python render_score.py original_transcription.json --print-notes
+python render_score.py example_score.json -o example.svg
+```
+
+Multiple files are accepted; their systems are appended in command-line order:
+
+```sh
+python render_score.py part-one.json part-two.json -o combined.svg
+```
+
+A file containing one system directly—`number`, `key`, `time`, and `bars` at
+the top level—is also accepted.
+
+If `-o`/`--output` is omitted, the input basename is used: `top_line.json`
+becomes `top_line.svg`.
+
+The compact JSON note form is `"PITCH:DURATION"`, for example
+`"A4:8"` for an eighth note or `"C5:4"` for a quarter note. A bar can also
+carry `final`, `repeat_start`, `repeat_end`, and `rehearsal` fields. For a
+visible local accidental or a rest, use an object such as
+`{"pitch": "F4", "duration": 8, "accidental": "♮"}` or
+`{"duration": 4, "rest": true}`.
 
 The basic model is `Score` → `System` → `Bar` → `Note`:
 
