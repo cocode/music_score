@@ -45,10 +45,17 @@
       "key": "D",
       "time": "3/8",
       "bars": [
-        {"notes": ["A4:8", "B4:8", "C5:8"]},
-        {"notes": ["D5:8", "C5:8", "B4:8"]},
-        {"notes": ["A4:8", "B4:8", "C5:8"], "repeat_end": true, "fermata": true},
-        {"notes": ["D5:8", "C5:8", "B4:8"]}
+        {"notes": ["E5:4", "A4:8"]},
+        {"notes": [
+          {"pitch": "A4", "duration": 16},
+          "D5:8",
+          "F5:8",
+          {"pitch": "F5", "duration": 8}
+        ]},
+        {"notes": ["A4:8", "D5:8", "F5:8"]},
+        {"notes": ["A5:8", "B5:8", "A5:8"]},
+        {"notes": ["F5:4", "A4:8"]},
+        {"notes": ["A5:16", "F5:16", "D5:8", "D6:8"]}
       ]
     },
     {
