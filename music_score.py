@@ -123,6 +123,8 @@ class Style:
     staff_width: float = 1.15
     note_width: float = 11.0
     note_height: float = 7.5
+    accidental_font_size: float = 27.0
+    accidental_offset_x: float = 18.0
     beam_thickness: float = 4.0
     beam_clearance: float = 1.0
     minimum_intermediate_stem_ratio: float = 0.5
@@ -414,8 +416,9 @@ class Score:
         accidental = note.display_accidental
         if accidental:
             symbol = "♯" if accidental == "#" else "♭" if accidental == "b" else "♮"
-            svg.text(x - 12, y + 6, symbol, fill=ink,
-                     font_family="DejaVu Sans, Georgia, serif", font_size=19)
+            svg.text(x - s.accidental_offset_x, y + 8, symbol, fill=ink,
+                     font_family="DejaVu Sans, Georgia, serif",
+                     font_size=s.accidental_font_size, text_anchor="middle")
 
         filled = note.duration not in (1, 2)
         svg.ellipse(x, y, s.note_width / 2, s.note_height / 2,
