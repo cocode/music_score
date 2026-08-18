@@ -4,6 +4,15 @@ This is a deliberately small renderer for engraved-looking, single-staff
 melodies. It uses only Python’s standard library and emits plain SVG. Open the
 generated `score.svg` in a browser or import it into a vector editor.
 
+The reason for not using an existing one is that I'm reconstructing old manuscripts
+and I want to draw them exactly as they were rendered originally. This is
+easier to do with my own code. 
+
+Yes, this is vibe coded, and the rest of this readme is AI generated (codex,
+if you are curious.)
+
+<hr>
+
 In standard music-notation terminology, the vertical lines attached to note
 heads are **stems**. The usually horizontal, sometimes gently sloped connector
 joining short notes is a **beam**; all notes in one beamed group share a stem
