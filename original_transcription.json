@@ -76,9 +76,10 @@
       "bars": [
         {"notes": ["D5:4", "F5:8"]},
         {"notes": ["E5:8", "C5:8", "D5:8"]},
-        {"notes": ["B5:4", "D5:8"]},
-        {"notes": ["C5:8", "F5:8", "A5:8]},
-        {"notes": ["B5:8", {"pitch": "B4", "duration": 4, "accidental": "#"}, "A4:8"], "repeat_end": true, "rehearsal": "Da Capo."}
+        {"notes": ["B4:4", "D5:8"]},
+        {"notes": ["C5:8", "F5:8", "A#4:8"]},
+        {"notes": ["B4:4"], 
+		  "repeat_end": true, "rehearsal": "Da Capo."}
       ]
     },
     {
