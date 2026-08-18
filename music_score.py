@@ -23,8 +23,10 @@ Example::
 
 from __future__ import annotations
 
+import base64
 from dataclasses import dataclass, field
 from html import escape
+from pathlib import Path
 import re
 from typing import Iterable, Optional, Sequence
 
@@ -85,7 +87,10 @@ class Bar:
     notes: Sequence[Note]
     repeat_start: bool = False
     repeat_end: bool = False
+    repeat_both: bool = False
     segno: bool = False
+    segno_start: bool = False
+    fermata: bool = False
     final: bool = False
     rehearsal: Optional[str] = None
 
@@ -167,6 +172,22 @@ def _attrs(attrs: dict[str, object]) -> str:
     return "".join(f' {key.replace("_", "-")}="{escape(str(value))}"' for key, value in attrs.items())
 
 
+def _embedded_music_font() -> str:
+    """Return an SVG font-face definition when the bundled Noto font exists."""
+    font_path = Path(__file__).with_name("NotoMusic-Regular.ttf")
+    try:
+        encoded = base64.b64encode(font_path.read_bytes()).decode("ascii")
+    except OSError:
+        return ""
+    return (
+        "<defs><style>"
+        '@font-face{font-family:"Noto Music";'
+        f"src:url(data:font/ttf;base64,{encoded}) format(\"truetype\");"
+        "font-weight:normal;font-style:normal;}"
+        "</style></defs>"
+    )
+
+
 class Score:
     """Render one or more systems of a monophonic treble-staff score."""
 
@@ -196,6 +217,9 @@ class Score:
         height = top + max(1, len(self.systems)) * (system_height + self.system_gap) - self.system_gap + footer_height + 20
         svg = SVG(self.style.page_width, height)
         ink, paper = self.style.ink, self.style.paper
+        embedded_font = _embedded_music_font()
+        if embedded_font:
+            svg.raw(embedded_font)
         svg.rect(0, 0, self.style.page_width, height, fill=paper)
         if self.title:
             svg.text(self.style.page_width / 2, 28, self.title, text_anchor="middle", fill=ink,
@@ -240,15 +264,15 @@ class Score:
 
         # Unicode music symbols keep the library font-independent at the SVG
         # level while allowing a high-quality installed music font to be used.
-        svg.text(left + 7, staff_top + 43, "𝄞", fill=ink,
-                 font_family="Bravura, Noto Music, DejaVu Sans, serif", font_size=73.5)
+        svg.text(left + 7, staff_top + 4 * s.staff_gap, "𝄞", fill=ink,
+                 font_family="Noto Music, Bravura, DejaVu Sans, serif", font_size=39.2)
         key_x = left + 41
         key_steps = (4, 1, 5, 2, 6, 3, 0)  # F, C, G, D, A, E, B in treble clef.
         for index, accidental in enumerate(self._key_accidentals(system.key)):
             symbol = "♯" if accidental == "#" else "♭"
             y = staff_top + 2 * s.staff_gap - key_steps[index] * (s.staff_gap / 2) + 6
             svg.text(key_x + index * 10, y, symbol, fill=ink,
-                     font_family="Bravura, Noto Music, DejaVu Sans, serif", font_size=18)
+                     font_family="Noto Music, Bravura, DejaVu Sans, serif", font_size=18)
         time_x = key_x + len(self._key_accidentals(system.key)) * 10 + 16
         if system.time:
             numerator, denominator = system.time.split("/", 1)
@@ -261,7 +285,7 @@ class Score:
         scale = max(0.65, (content_right - content_left) / max(1, sum(bar_widths)))
         widths = [natural_width * scale for natural_width in bar_widths]
         staff_end = content_left + sum(widths)
-        if system.bars and (system.bars[-1].repeat_end or system.bars[-1].repeat_start):
+        if system.bars and (system.bars[-1].repeat_end or system.bars[-1].repeat_start or system.bars[-1].repeat_both):
             # The outer stroke of a repeat-end sign is three units inside the
             # nominal bar boundary; staff lines stop at that stroke.
             staff_end -= 3
@@ -317,7 +341,20 @@ class Score:
         self._draw_beams(svg, positions, staff_top, beam_directions)
 
         boundary_x = x + width
-        if bar.repeat_start:
+        if bar.repeat_both:
+            repeat_x = boundary_x if is_last else x
+            if is_last:
+                first_bar_x, second_bar_x = repeat_x - 8, repeat_x - 4
+                left_dot_x, right_dot_x = repeat_x - 12, repeat_x + 2
+            else:
+                first_bar_x, second_bar_x = repeat_x + 4, repeat_x + 8
+                left_dot_x, right_dot_x = repeat_x, repeat_x + 12
+            svg.line(first_bar_x, staff_top, first_bar_x, staff_bottom, stroke=ink, stroke_width=s.bar_width)
+            svg.line(second_bar_x, staff_top, second_bar_x, staff_bottom, stroke=ink, stroke_width=2.2)
+            for dot_y in (staff_top + 1.5 * s.staff_gap, staff_top + 2.5 * s.staff_gap):
+                svg.ellipse(left_dot_x, dot_y, 1.7, 1.7, fill=ink)
+                svg.ellipse(right_dot_x, dot_y, 1.7, 1.7, fill=ink)
+        elif bar.repeat_start:
             if is_last:
                 repeat_x = boundary_x
                 first_bar_x, second_bar_x, dot_x = repeat_x - 8, repeat_x - 4, repeat_x + 2
@@ -332,16 +369,29 @@ class Score:
             svg.line(boundary_x - 3, staff_top, boundary_x - 3, staff_bottom, stroke=ink, stroke_width=2.2)
             for dot_y in (staff_top + 1.5 * s.staff_gap, staff_top + 2.5 * s.staff_gap):
                 svg.ellipse(boundary_x - 12, dot_y, 1.7, 1.7, fill=ink)
-        else:
+        elif not (bar.repeat_both or (bar.repeat_start and is_last)):
             svg.line(boundary_x, staff_top, boundary_x, staff_bottom, stroke=ink,
                      stroke_width=2.0 if bar.final else s.bar_width)
         if bar.rehearsal:
             svg.text(boundary_x - width / 2, staff_bottom + 26, bar.rehearsal, fill=ink,
                      text_anchor="middle", font_family="Georgia, Times New Roman, serif", font_size=13)
         if bar.segno:
-            svg.text(boundary_x - 7, staff_top - 17, "𝄋", fill=ink,
-                     font_family="Bravura, Noto Music, DejaVu Sans, serif", font_size=25,
-                     text_anchor="middle")
+            self._draw_segno(svg, boundary_x - 7, staff_top - 17)
+        if bar.segno_start:
+            self._draw_segno(svg, x + 18, staff_top - 17)
+        if bar.fermata:
+            fermata_x = boundary_x
+            svg.path(
+                f"M {fermata_x - 9:g} {staff_top - 17:g} Q {fermata_x:g} {staff_top - 26:g} {fermata_x + 9:g} {staff_top - 17:g}",
+                fill="none", stroke=ink, stroke_width=1.5, stroke_linecap="round",
+            )
+            svg.ellipse(fermata_x, staff_top - 13, 2.0, 2.0, fill=ink)
+
+    def _draw_segno(self, svg: SVG, x: float, y: float) -> None:
+        """Draw the Unicode segno using Noto Music."""
+        svg.text(x, y + 12, "𝄋", fill=self.style.ink,
+                 font_family="Noto Music, Bravura, DejaVu Sans, serif", font_size=30,
+                 text_anchor="middle")
 
     def _draw_note(self, svg: SVG, note: Note, x: float, staff_top: float,
                    stem_up: Optional[bool] = None,
@@ -363,7 +413,7 @@ class Score:
         if accidental:
             symbol = "♯" if accidental == "#" else "♭" if accidental == "b" else "♮"
             svg.text(x - 12, y + 6, symbol, fill=ink,
-                     font_family="Bravura, Noto Music, DejaVu Sans, serif", font_size=17)
+                     font_family="Noto Music, Bravura, DejaVu Sans, serif", font_size=17)
 
         filled = note.duration not in (1, 2)
         svg.ellipse(x, y, s.note_width / 2, s.note_height / 2,
@@ -376,7 +426,8 @@ class Score:
             is_beamed = stem_end is not None
             if stem_end is None:
                 stem_end = self._default_stem_end(y, stem_up)
-            svg.line(stem_x, stem_y, stem_x, stem_end, stroke=ink, stroke_width=s.stem, stroke_linecap="round")
+            svg.line(stem_x, stem_y, stem_x, stem_end, stroke=ink, stroke_width=s.stem,
+                     stroke_linecap="butt" if is_beamed else "round")
             # A short note outside a beamed group still needs its flag. Notes
             # that received a beam endpoint are already connected by a beam.
             if note.duration in (8, 16) and not is_beamed:
@@ -418,14 +469,14 @@ class Score:
             for index in range(first, 0, -1):
                 yy = staff_top - index * s.staff_gap
                 if yy >= y - s.staff_gap / 2:
-                    svg.line(x - 7, yy, x + 7, yy, stroke=ink, stroke_width=s.staff_width)
+                    svg.line(x - 8.75, yy, x + 8.75, yy, stroke=ink, stroke_width=s.staff_width)
         elif y > staff_top + 4 * s.staff_gap + 1:
             distance = y - (staff_top + 4 * s.staff_gap)
             first = int((distance + s.staff_gap / 2) // s.staff_gap)
             for index in range(1, first + 1):
                 yy = staff_top + 4 * s.staff_gap + index * s.staff_gap
                 if yy <= y + s.staff_gap / 2:
-                    svg.line(x - 7, yy, x + 7, yy, stroke=ink, stroke_width=s.staff_width)
+                    svg.line(x - 8.75, yy, x + 8.75, yy, stroke=ink, stroke_width=s.staff_width)
 
     def _beam_directions(self, positions: Sequence[tuple[Note, float]]) -> dict[float, bool]:
         """Choose one stem direction for every beamed group.

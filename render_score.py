@@ -63,7 +63,10 @@ def score_from_dict(data: dict[str, Any]) -> Score:
                 [_note(value, key) for value in note_data],
                 repeat_start=bool(options.get("repeat_start", False)),
                 repeat_end=bool(options.get("repeat_end", False)),
+                repeat_both=bool(options.get("repeat_both", False)),
                 segno=bool(options.get("segno", False)),
+                segno_start=bool(options.get("segno_start", False)),
+                fermata=bool(options.get("fermata", False)),
                 final=bool(options.get("final", False)),
                 rehearsal=options.get("rehearsal"),
             ))
