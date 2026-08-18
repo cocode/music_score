@@ -85,6 +85,7 @@ class Bar:
     notes: Sequence[Note]
     repeat_start: bool = False
     repeat_end: bool = False
+    segno: bool = False
     final: bool = False
     rehearsal: Optional[str] = None
 
@@ -96,6 +97,7 @@ class Bar:
 class System:
     bars: Sequence[Bar]
     number: Optional[str] = None
+    no_label: bool = False
     clef: str = "treble"
     key: str = "F#"
     time: str = "3/8"
@@ -114,8 +116,9 @@ class Style:
     staff_gap: float = 9.0
     stem: float = 1.6
     staff_width: float = 1.15
-    note_width: float = 8.0
-    note_height: float = 7.8
+    note_width: float = 11.0
+    note_height: float = 7.5
+    beam_thickness: float = 4.0
     bar_width: float = 1.2
     page_width: float = 900.0
     margin_x: float = 54.0
@@ -225,15 +228,15 @@ class Score:
         staff_bottom = staff_top + 4 * s.staff_gap
 
         if system.number:
+            if system.no_label:
+                svg.text(left - 44, staff_top + 11, "No", fill=ink,
+                         font_family="Georgia, Times New Roman, serif", font_size=13,
+                         font_weight="bold")
             svg.text(left - 44, staff_top + 29, system.number, fill=ink,
                      font_family="Georgia, Times New Roman, serif", font_size=19, font_weight="bold")
         if system.label:
             svg.text(left - 4, staff_top - 9, system.label, fill=ink,
                      font_family="Georgia, Times New Roman, serif", font_size=10, font_style="italic")
-
-        for line_no in range(5):
-            yy = staff_top + line_no * s.staff_gap
-            svg.line(left, yy, right, yy, stroke=ink, stroke_width=s.staff_width, stroke_linecap="round")
 
         # Unicode music symbols keep the library font-independent at the SVG
         # level while allowing a high-quality installed music font to be used.
@@ -249,17 +252,25 @@ class Score:
         time_x = key_x + len(self._key_accidentals(system.key)) * 10 + 16
         if system.time:
             numerator, denominator = system.time.split("/", 1)
-            svg.text(time_x, staff_top + 14, numerator, fill=ink, font_family="Georgia, serif", font_size=28.5, font_weight="bold")
-            svg.text(time_x, staff_top + 38, denominator, fill=ink, font_family="Georgia, serif", font_size=28.5, font_weight="bold")
+            svg.text(time_x, staff_top + 12, numerator, fill=ink, font_family="Georgia, serif", font_size=20, font_weight="bold")
+            svg.text(time_x, staff_top + 36, denominator, fill=ink, font_family="Georgia, serif", font_size=20, font_weight="bold")
 
         content_left = time_x + 26
         content_right = right - 3
         bar_widths = [self._bar_width(bar) for bar in system.bars]
         scale = max(0.65, (content_right - content_left) / max(1, sum(bar_widths)))
+        widths = [natural_width * scale for natural_width in bar_widths]
+        staff_end = content_left + sum(widths)
+        if system.bars and (system.bars[-1].repeat_end or system.bars[-1].repeat_start):
+            # The outer stroke of a repeat-end sign is three units inside the
+            # nominal bar boundary; staff lines stop at that stroke.
+            staff_end -= 3
+        for line_no in range(5):
+            yy = staff_top + line_no * s.staff_gap
+            svg.line(left, yy, staff_end, yy, stroke=ink, stroke_width=s.staff_width, stroke_linecap="round")
         x = content_left
-        for bar, natural_width in zip(system.bars, bar_widths):
-            width = natural_width * scale
-            self._draw_bar(svg, bar, x, width, staff_top)
+        for index, (bar, width) in enumerate(zip(system.bars, widths)):
+            self._draw_bar(svg, bar, x, width, staff_top, is_last=index == len(widths) - 1)
             x += width
 
     @staticmethod
@@ -275,7 +286,8 @@ class Score:
         # short notes get grouped into visible beams instead of being cramped.
         return max(68.0, 24.0 + sum({1: 30, 2: 25, 4: 19, 8: 15, 16: 12}[n.duration] for n in bar.notes))
 
-    def _draw_bar(self, svg: SVG, bar: Bar, x: float, width: float, staff_top: float) -> None:
+    def _draw_bar(self, svg: SVG, bar: Bar, x: float, width: float, staff_top: float,
+                  is_last: bool = False) -> None:
         s = self.style
         ink = s.ink
         staff_bottom = staff_top + 4 * s.staff_gap
@@ -291,7 +303,6 @@ class Score:
 
         beam_directions = self._beam_directions(positions)
         beam_ends = self._beam_ends(positions, staff_top, beam_directions)
-        self._draw_beams(svg, positions, staff_top, beam_directions)
         for note, note_x in positions:
             self._draw_note(
                 svg,
@@ -301,13 +312,21 @@ class Score:
                 stem_up=beam_directions.get(note_x),
                 stem_end=beam_ends.get(note_x),
             )
+        # Paint the beam over the stem ends so no stem cap protrudes through
+        # the opposite side of the joining stroke.
+        self._draw_beams(svg, positions, staff_top, beam_directions)
 
         boundary_x = x + width
         if bar.repeat_start:
-            svg.line(x + 4, staff_top, x + 4, staff_bottom, stroke=ink, stroke_width=2.2)
-            svg.line(x + 8, staff_top, x + 8, staff_bottom, stroke=ink, stroke_width=s.bar_width)
+            if is_last:
+                repeat_x = boundary_x
+                first_bar_x, second_bar_x, dot_x = repeat_x - 8, repeat_x - 4, repeat_x + 2
+            else:
+                first_bar_x, second_bar_x, dot_x = x + 4, x + 8, x + 12
+            svg.line(first_bar_x, staff_top, first_bar_x, staff_bottom, stroke=ink, stroke_width=s.bar_width)
+            svg.line(second_bar_x, staff_top, second_bar_x, staff_bottom, stroke=ink, stroke_width=2.2)
             for dot_y in (staff_top + 1.5 * s.staff_gap, staff_top + 2.5 * s.staff_gap):
-                svg.ellipse(x + 12, dot_y, 1.7, 1.7, fill=ink)
+                svg.ellipse(dot_x, dot_y, 1.7, 1.7, fill=ink)
         if bar.repeat_end:
             svg.line(boundary_x - 7, staff_top, boundary_x - 7, staff_bottom, stroke=ink, stroke_width=s.bar_width)
             svg.line(boundary_x - 3, staff_top, boundary_x - 3, staff_bottom, stroke=ink, stroke_width=2.2)
@@ -319,6 +338,10 @@ class Score:
         if bar.rehearsal:
             svg.text(boundary_x - width / 2, staff_bottom + 26, bar.rehearsal, fill=ink,
                      text_anchor="middle", font_family="Georgia, Times New Roman, serif", font_size=13)
+        if bar.segno:
+            svg.text(boundary_x - 7, staff_top - 17, "𝄋", fill=ink,
+                     font_family="Bravura, Noto Music, DejaVu Sans, serif", font_size=25,
+                     text_anchor="middle")
 
     def _draw_note(self, svg: SVG, note: Note, x: float, staff_top: float,
                    stem_up: Optional[bool] = None,
@@ -349,7 +372,7 @@ class Score:
             if stem_up is None:
                 stem_up = note.step < 0.5
             stem_x = x + s.note_width / 2 if stem_up else x - s.note_width / 2
-            stem_y = y - 3 if stem_up else y + 3
+            stem_y = y
             is_beamed = stem_end is not None
             if stem_end is None:
                 stem_end = self._default_stem_end(y, stem_up)
@@ -383,7 +406,7 @@ class Score:
         return staff_top + 2 * self.style.staff_gap - note.step * (self.style.staff_gap / 2)
 
     def _default_stem_end(self, note_y: float, stem_up: bool) -> float:
-        stem_start = note_y - 3 if stem_up else note_y + 3
+        stem_start = note_y
         stem_length = 3.5 * self.style.staff_gap
         return stem_start - stem_length if stem_up else stem_start + stem_length
 
@@ -486,7 +509,7 @@ class Score:
         beam_y1, beam_y2 = self._beam_line(group, staff_top, stem_up)
         x1 = group[0][1] + s.note_width / 2 if stem_up else group[0][1] - s.note_width / 2
         x2 = group[-1][1] + s.note_width / 2 if stem_up else group[-1][1] - s.note_width / 2
-        thickness = 4.0 if group[0][0].duration == 8 else 7.0
+        thickness = s.beam_thickness
         underside1 = beam_y1 + thickness if stem_up else beam_y1 - thickness
         underside2 = beam_y2 + thickness if stem_up else beam_y2 - thickness
         svg.path(

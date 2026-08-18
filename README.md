@@ -50,15 +50,15 @@ Multiple files are accepted; their systems are appended in command-line order:
 python render_score.py part-one.json part-two.json -o combined.svg
 ```
 
-A file containing one system directly—`number`, `key`, `time`, and `bars` at
-the top level—is also accepted.
+A file containing one system directly—`number`, `no_label`, `key`, `time`, and
+`bars` at the top level—is also accepted.
 
 If `-o`/`--output` is omitted, the input basename is used: `top_line.json`
 becomes `top_line.svg`.
 
 The compact JSON note form is `"PITCH:DURATION"`, for example
 `"A4:8"` for an eighth note or `"C5:4"` for a quarter note. A bar can also
-carry `final`, `repeat_start`, `repeat_end`, and `rehearsal` fields. For a
+carry `final`, `repeat_start`, `repeat_end`, `segno`, and `rehearsal` fields. For a
 visible local accidental or a rest, use an object such as
 `{"pitch": "F4", "duration": 8, "accidental": "♮"}` or
 `{"duration": 4, "rest": true}`.
