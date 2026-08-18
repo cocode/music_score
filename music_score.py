@@ -124,6 +124,8 @@ class Style:
     note_width: float = 11.0
     note_height: float = 7.5
     beam_thickness: float = 4.0
+    beam_clearance: float = 1.0
+    minimum_intermediate_stem_ratio: float = 0.5
     bar_width: float = 1.2
     page_width: float = 900.0
     margin_x: float = 54.0
@@ -272,7 +274,7 @@ class Score:
             symbol = "♯" if accidental == "#" else "♭"
             y = staff_top + 2 * s.staff_gap - key_steps[index] * (s.staff_gap / 2) + 6
             svg.text(key_x + index * 10, y, symbol, fill=ink,
-                     font_family="Noto Music, Bravura, DejaVu Sans, serif", font_size=18)
+                     font_family="DejaVu Sans, Georgia, serif", font_size=20)
         time_x = key_x + len(self._key_accidentals(system.key)) * 10 + 16
         if system.time:
             numerator, denominator = system.time.split("/", 1)
@@ -413,7 +415,7 @@ class Score:
         if accidental:
             symbol = "♯" if accidental == "#" else "♭" if accidental == "b" else "♮"
             svg.text(x - 12, y + 6, symbol, fill=ink,
-                     font_family="Noto Music, Bravura, DejaVu Sans, serif", font_size=17)
+                     font_family="DejaVu Sans, Georgia, serif", font_size=19)
 
         filled = note.duration not in (1, 2)
         svg.ellipse(x, y, s.note_width / 2, s.note_height / 2,
@@ -464,19 +466,21 @@ class Score:
     def _ledger_lines(self, svg: SVG, x: float, y: float, staff_top: float) -> None:
         s = self.style
         ink = s.ink
+        staff_bottom = staff_top + 4 * s.staff_gap
         if y < staff_top - 1:
-            first = int((staff_top - y + s.staff_gap / 2) // s.staff_gap)
-            for index in range(first, 0, -1):
-                yy = staff_top - index * s.staff_gap
-                if yy >= y - s.staff_gap / 2:
-                    svg.line(x - 8.75, yy, x + 8.75, yy, stroke=ink, stroke_width=s.staff_width)
-        elif y > staff_top + 4 * s.staff_gap + 1:
-            distance = y - (staff_top + 4 * s.staff_gap)
-            first = int((distance + s.staff_gap / 2) // s.staff_gap)
-            for index in range(1, first + 1):
-                yy = staff_top + 4 * s.staff_gap + index * s.staff_gap
-                if yy <= y + s.staff_gap / 2:
-                    svg.line(x - 8.75, yy, x + 8.75, yy, stroke=ink, stroke_width=s.staff_width)
+            # Work outward from the staff and stop at the note. This draws a
+            # ledger line through a note on a line, but never beyond it.
+            yy = staff_top - s.staff_gap
+            while yy >= y:
+                svg.line(x - 8.75, yy, x + 8.75, yy,
+                         stroke=ink, stroke_width=s.staff_width)
+                yy -= s.staff_gap
+        elif y > staff_bottom + 1:
+            yy = staff_bottom + s.staff_gap
+            while yy <= y:
+                svg.line(x - 8.75, yy, x + 8.75, yy,
+                         stroke=ink, stroke_width=s.staff_width)
+                yy += s.staff_gap
 
     def _beam_directions(self, positions: Sequence[tuple[Note, float]]) -> dict[float, bool]:
         """Choose one stem direction for every beamed group.
@@ -515,9 +519,14 @@ class Score:
                 if len(group) >= 2:
                     stem_up = beam_directions[group[0][1]]
                     beam_y1, beam_y2 = self._beam_line(group, staff_top, stem_up)
-                    for index, (_, note_x) in enumerate(group):
-                        fraction = index / (len(group) - 1)
-                        ends[note_x] = beam_y1 + (beam_y2 - beam_y1) * fraction
+                    first_x = self._stem_x(group[0], stem_up)
+                    last_x = self._stem_x(group[-1], stem_up)
+                    for item in group:
+                        note_x = item[1]
+                        stem_x = self._stem_x(item, stem_up)
+                        ends[note_x] = self._line_y(
+                            stem_x, first_x, beam_y1, last_x, beam_y2
+                        )
                 group = []
         return ends
 
@@ -527,17 +536,90 @@ class Score:
         staff_top: float,
         stem_up: bool,
     ) -> tuple[float, float]:
-        """Connect the normal-length stems of the first and last notes.
+        """Find a beam line that clears every notehead in the group.
 
-        Interior stems are then interpolated onto this line. This is the
-        usual engraved construction for a sloped beam: the endpoints retain
-        their ordinary stem length, while only the middle stems are adjusted.
+        The first and last stems begin at their normal lengths. If that line
+        would cross a middle notehead, one or both endpoint stems are extended
+        away from the notes by the smallest incremental correction needed.
+        The same adjustment also prevents any interior stem from becoming
+        shorter than the configured fraction of a normal stem.
         """
+        s = self.style
         first_y = self._note_y(group[0][0], staff_top)
         last_y = self._note_y(group[-1][0], staff_top)
+        first_end = self._default_stem_end(first_y, stem_up)
+        last_end = self._default_stem_end(last_y, stem_up)
+        first_x = self._stem_x(group[0], stem_up)
+        last_x = self._stem_x(group[-1], stem_up)
+        outward = -1.0 if stem_up else 1.0
+        first_extension = 0.0
+        last_extension = 0.0
+
+        # Test the full rectangular envelope of each oval notehead. Using its
+        # left, center, and right x positions keeps a steep beam from clipping
+        # an edge even when it clears the center of the ellipse.
+        for note_index, (note, note_x) in enumerate(group):
+            note_y = self._note_y(note, staff_top)
+            sample_left = max(first_x, note_x - s.note_width / 2)
+            sample_right = min(last_x, note_x + s.note_width / 2)
+            if sample_left > sample_right:
+                continue
+            sample_center = min(max(note_x, sample_left), sample_right)
+            for sample_x in (sample_left, sample_center, sample_right):
+                fraction = (sample_x - first_x) / (last_x - first_x)
+                first_weight = 1.0 - fraction
+                last_weight = fraction
+                base_y = first_end + (last_end - first_end) * fraction
+                extension = (
+                    first_weight * first_extension
+                    + last_weight * last_extension
+                )
+                beam_y = base_y + outward * extension
+
+                if stem_up:
+                    beam_near_edge = beam_y + s.beam_thickness
+                    allowed_edge = note_y - s.note_height / 2 - s.beam_clearance
+                    deficit = beam_near_edge - allowed_edge
+                else:
+                    beam_near_edge = beam_y - s.beam_thickness
+                    allowed_edge = note_y + s.note_height / 2 + s.beam_clearance
+                    deficit = allowed_edge - beam_near_edge
+
+                if deficit > 0:
+                    # Project the correction onto the two endpoint stems in
+                    # proportion to how much each endpoint controls this x.
+                    denominator = first_weight ** 2 + last_weight ** 2
+                    first_extension += deficit * first_weight / denominator
+                    last_extension += deficit * last_weight / denominator
+
+            if 0 < note_index < len(group) - 1:
+                # Measure the interior stem at its actual attachment point,
+                # then lengthen the endpoint stems if interpolation would
+                # make it less than half the ordinary stem length.
+                stem_x = self._stem_x((note, note_x), stem_up)
+                fraction = (stem_x - first_x) / (last_x - first_x)
+                first_weight = 1.0 - fraction
+                last_weight = fraction
+                base_y = first_end + (last_end - first_end) * fraction
+                extension = (
+                    first_weight * first_extension
+                    + last_weight * last_extension
+                )
+                beam_y = base_y + outward * extension
+                stem_length = outward * (beam_y - note_y)
+                normal_stem_length = 3.5 * s.staff_gap
+                minimum_stem_length = (
+                    normal_stem_length * s.minimum_intermediate_stem_ratio
+                )
+                deficit = minimum_stem_length - stem_length
+                if deficit > 0:
+                    denominator = first_weight ** 2 + last_weight ** 2
+                    first_extension += deficit * first_weight / denominator
+                    last_extension += deficit * last_weight / denominator
+
         return (
-            self._default_stem_end(first_y, stem_up),
-            self._default_stem_end(last_y, stem_up),
+            first_end + outward * first_extension,
+            last_end + outward * last_extension,
         )
 
     def _draw_beams(self, svg: SVG, positions: Sequence[tuple[Note, float]], staff_top: float,
@@ -556,17 +638,130 @@ class Score:
     def _beam_group(self, svg: SVG, group: Sequence[tuple[Note, float]], staff_top: float,
                     stem_up: bool) -> None:
         s = self.style
-        ink = s.ink
-        beam_y1, beam_y2 = self._beam_line(group, staff_top, stem_up)
-        x1 = group[0][1] + s.note_width / 2 if stem_up else group[0][1] - s.note_width / 2
-        x2 = group[-1][1] + s.note_width / 2 if stem_up else group[-1][1] - s.note_width / 2
+        first_x, first_y, last_x, last_y = self._beam_geometry(
+            group, staff_top, stem_up
+        )
+        self._draw_beam_segment(svg, first_x, first_y, last_x, last_y, stem_up)
+
+        # Sixteenth-note groups carry a second parallel beam. A lone
+        # sixteenth inside a beamed group gets a short secondary flag.
+        secondary_shift = s.beam_thickness + 2.0
+        if not stem_up:
+            secondary_shift = -secondary_shift
+        run: list[int] = []
+        for index in range(len(group) + 1):
+            if index < len(group) and group[index][0].duration == 16:
+                run.append(index)
+            elif run:
+                if len(run) >= 2:
+                    run_first_x = self._stem_x(group[run[0]], stem_up)
+                    run_last_x = self._stem_x(group[run[-1]], stem_up)
+                    run_first_y = self._line_y(
+                        run_first_x, first_x, first_y, last_x, last_y
+                    ) + secondary_shift
+                    run_last_y = self._line_y(
+                        run_last_x, first_x, first_y, last_x, last_y
+                    ) + secondary_shift
+                    self._draw_beam_segment(
+                        svg,
+                        run_first_x,
+                        run_first_y,
+                        run_last_x,
+                        run_last_y,
+                        stem_up,
+                    )
+                else:
+                    self._draw_sixteenth_stub(
+                        svg,
+                        run[0],
+                        group,
+                        stem_up,
+                        first_x,
+                        first_y,
+                        last_x,
+                        last_y,
+                        secondary_shift,
+                    )
+                run = []
+
+    def _stem_x(self, item: tuple[Note, float], stem_up: bool) -> float:
+        """Return the x coordinate where this note's stem meets its beams."""
+        x = item[1]
+        offset = self.style.note_width / 2
+        return x + offset if stem_up else x - offset
+
+    def _beam_geometry(
+        self,
+        group: Sequence[tuple[Note, float]],
+        staff_top: float,
+        stem_up: bool,
+    ) -> tuple[float, float, float, float]:
+        first_y, last_y = self._beam_line(group, staff_top, stem_up)
+        return (
+            self._stem_x(group[0], stem_up),
+            first_y,
+            self._stem_x(group[-1], stem_up),
+            last_y,
+        )
+
+    @staticmethod
+    def _line_y(x: float, x1: float, y1: float, x2: float, y2: float) -> float:
+        """Interpolate y on a beam using actual horizontal stem positions."""
+        if x1 == x2:
+            return y1
+        return y1 + (y2 - y1) * ((x - x1) / (x2 - x1))
+
+    def _draw_beam_segment(
+        self,
+        svg: SVG,
+        x1: float,
+        y1: float,
+        x2: float,
+        y2: float,
+        stem_up: bool,
+    ) -> None:
+        """Draw a constant-thickness beam with vertical ends."""
+        s = self.style
         thickness = s.beam_thickness
-        underside1 = beam_y1 + thickness if stem_up else beam_y1 - thickness
-        underside2 = beam_y2 + thickness if stem_up else beam_y2 - thickness
+        underside1 = y1 + thickness if stem_up else y1 - thickness
+        underside2 = y2 + thickness if stem_up else y2 - thickness
         svg.path(
-            f"M {x1:g} {beam_y1:g} L {x2:g} {beam_y2:g} "
+            f"M {x1:g} {y1:g} L {x2:g} {y2:g} "
             f"L {x2:g} {underside2:g} L {x1:g} {underside1:g} Z",
-            fill=ink,
+            fill=s.ink,
+        )
+
+    def _draw_sixteenth_stub(
+        self,
+        svg: SVG,
+        index: int,
+        group: Sequence[tuple[Note, float]],
+        stem_up: bool,
+        first_x: float,
+        first_y: float,
+        last_x: float,
+        last_y: float,
+        shift: float,
+    ) -> None:
+        """Draw a partial secondary beam toward the neighboring note."""
+        stem_x = self._stem_x(group[index], stem_up)
+        if index == 0:
+            neighbor_x = self._stem_x(group[1], stem_up)
+        elif index == len(group) - 1:
+            neighbor_x = self._stem_x(group[index - 1], stem_up)
+        else:
+            left_x = self._stem_x(group[index - 1], stem_up)
+            right_x = self._stem_x(group[index + 1], stem_up)
+            neighbor_x = left_x if stem_x - left_x <= right_x - stem_x else right_x
+
+        # Carry the secondary beam all the way to the neighboring stem. Both
+        # endpoints are evaluated on the primary beam, keeping the two
+        # strokes parallel and ensuring there is no gap at either stem.
+        end_x = neighbor_x
+        stem_y = self._line_y(stem_x, first_x, first_y, last_x, last_y) + shift
+        end_y = self._line_y(end_x, first_x, first_y, last_x, last_y) + shift
+        self._draw_beam_segment(
+            svg, stem_x, stem_y, end_x, end_y, stem_up
         )
 
 
