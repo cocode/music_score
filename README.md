@@ -71,11 +71,39 @@ If `-o`/`--output` is omitted, the input basename is used: `top_line.json`
 becomes `top_line.svg`.
 
 The compact JSON note form is `"PITCH:DURATION"`, for example
-`"A4:8"` for an eighth note or `"C5:4"` for a quarter note. A bar can also
+`"A4:8"` for an eighth note, `"C5:4"` for a quarter note, or `"G♮5:16"`
+for a sixteenth note with a displayed natural sign. Append one or more periods
+for augmentation dots: `"A5:8."` is dotted and `"A5:8.."` is double-dotted.
+A bar can also
 carry `final`, `repeat_start`, `repeat_end`, `repeat_both`, `segno`, and `rehearsal` fields. For a
 visible local accidental or a rest, use an object such as
 `{"pitch": "F4", "duration": 8, "accidental": "♮"}` or
 `{"duration": 4, "rest": true}`.
+
+The long form uses an integer `dots` field, such as
+`{"pitch": "A5", "duration": 8, "dots": 2}` for the same double-dotted
+eighth note as `"A5:8.."`.
+
+Visible accidentals automatically reserve extra horizontal space before their
+notes. Accidentals supplied by the key signature are suppressed and do not
+consume this space unless explicitly requested.
+
+Repeat signs use the standard two central dots by default. Set
+`"repeat_dots": 4` on a bar with `repeat_start`, `repeat_end`, or
+`repeat_both` to reproduce the historical variant with one dot in every staff
+space.
+
+To end a beam group after a particular eighth or sixteenth note, use the
+object form with `"beam_break_after": true`:
+
+```json
+{"notes": [
+  "E5:8",
+  {"pitch": "A4", "duration": 8, "beam_break_after": true},
+  "E5:16",
+  "G5:16"
+]}
+```
 
 The basic model is `Score` → `System` → `Bar` → `Note`:
 

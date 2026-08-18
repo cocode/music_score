@@ -34,7 +34,7 @@ from typing import Iterable, Optional, Sequence
 PITCHES = {"C": 0, "D": 1, "E": 2, "F": 3, "G": 4, "A": 5, "B": 6}
 NATURAL_STEPS = {"C": 0, "D": 1, "E": 2, "F": 3, "G": 4, "A": 5, "B": 6}
 DIATONIC_FROM_C = {"C": 0, "D": 1, "E": 2, "F": 3, "G": 4, "A": 5, "B": 6}
-NOTE_RE = re.compile(r"^([A-Ga-g])([#b]?)(-?\d+)$")
+NOTE_RE = re.compile(r"^([A-Ga-g])([#b♮]?)(-?\d+)$")
 
 
 @dataclass(frozen=True)
@@ -50,10 +50,14 @@ class Note:
     duration: int = 4
     accidental: Optional[str] = None
     rest: bool = False
+    beam_break_after: bool = False
+    dots: int = 0
 
     def __post_init__(self) -> None:
         if self.duration not in (1, 2, 4, 8, 16):
             raise ValueError("duration must be one of 1, 2, 4, 8, or 16")
+        if type(self.dots) is not int or self.dots < 0:
+            raise ValueError("dots must be a non-negative integer")
         if not self.rest:
             match = NOTE_RE.match(self.pitch)
             if not match:
@@ -81,6 +85,12 @@ class Note:
             return self.accidental
         return self.parsed[1]
 
+    @property
+    def rhythmic_units(self) -> float:
+        """Duration in sixteenth-note units, including augmentation dots."""
+        dot_factor = 2.0 - 2.0 ** (-self.dots)
+        return (16 / self.duration) * dot_factor
+
 
 @dataclass
 class Bar:
@@ -88,6 +98,7 @@ class Bar:
     repeat_start: bool = False
     repeat_end: bool = False
     repeat_both: bool = False
+    repeat_dots: int = 2
     segno: bool = False
     segno_start: bool = False
     fermata: bool = False
@@ -96,6 +107,8 @@ class Bar:
 
     def __post_init__(self) -> None:
         self.notes = tuple(self.notes)
+        if self.repeat_dots not in (2, 4):
+            raise ValueError("repeat_dots must be 2 or 4")
 
 
 @dataclass
@@ -125,6 +138,7 @@ class Style:
     note_height: float = 7.5
     accidental_font_size: float = 27.0
     accidental_offset_x: float = 18.0
+    accidental_spacing: float = 24.0
     beam_thickness: float = 4.0
     beam_clearance: float = 1.0
     minimum_intermediate_stem_ratio: float = 0.5
@@ -308,26 +322,52 @@ class Score:
         count = {"C": 0, "G": 1, "D": 2, "A": 3, "E": 4, "B": 5, "F#": 6}.get(key, 1 if key.endswith("#") else 0)
         return tuple("#" for _ in range(count))
 
-    @staticmethod
-    def _bar_width(bar: Bar) -> float:
+    def _bar_width(self, bar: Bar) -> float:
         # Width is intentionally generous, like a nineteenth-century plate:
         # short notes get grouped into visible beams instead of being cramped.
-        return max(68.0, 24.0 + sum({1: 30, 2: 25, 4: 19, 8: 15, 16: 12}[n.duration] for n in bar.notes))
+        note_widths = sum(
+            {1: 30, 2: 25, 4: 19, 8: 15, 16: 12}[note.duration]
+            * (2.0 - 2.0 ** (-note.dots))
+            for note in bar.notes
+        )
+        accidental_space = sum(
+            self.style.accidental_spacing
+            for note in bar.notes
+            if note.display_accidental
+        )
+        # Add accidental room after applying the minimum so a short measure
+        # cannot absorb or discard the requested allowance.
+        return max(68.0, 24.0 + note_widths) + accidental_space
+
+    def _note_positions(
+        self, bar: Bar, x: float, width: float
+    ) -> list[tuple[Note, float]]:
+        """Lay out notes rhythmically, reserving leading room for accidentals."""
+        s = self.style
+        content_x = x + 8
+        content_width = width - 16
+        total_units = sum(note.rhythmic_units for note in bar.notes) or 1
+        accidental_space = sum(
+            s.accidental_spacing for note in bar.notes if note.display_accidental
+        )
+        rhythmic_width = max(1.0, content_width - accidental_space)
+
+        positions: list[tuple[Note, float]] = []
+        cursor = content_x
+        for note in bar.notes:
+            if note.display_accidental:
+                cursor += s.accidental_spacing
+            note_width = rhythmic_width * note.rhythmic_units / total_units
+            positions.append((note, cursor + note_width / 2))
+            cursor += note_width
+        return positions
 
     def _draw_bar(self, svg: SVG, bar: Bar, x: float, width: float, staff_top: float,
                   is_last: bool = False) -> None:
         s = self.style
         ink = s.ink
         staff_bottom = staff_top + 4 * s.staff_gap
-        content_x = x + 8
-        content_width = width - 16
-        total_units = sum(16 / n.duration for n in bar.notes) or 1
-        positions: list[tuple[Note, float]] = []
-        cursor = content_x
-        for note in bar.notes:
-            note_width = content_width * (16 / note.duration) / total_units
-            positions.append((note, cursor + note_width / 2))
-            cursor += note_width
+        positions = self._note_positions(bar, x, width)
 
         beam_directions = self._beam_directions(positions)
         beam_ends = self._beam_ends(positions, staff_top, beam_directions)
@@ -345,6 +385,11 @@ class Score:
         self._draw_beams(svg, positions, staff_top, beam_directions)
 
         boundary_x = x + width
+        repeat_dot_offsets = (
+            (0.5, 1.5, 2.5, 3.5)
+            if bar.repeat_dots == 4
+            else (1.5, 2.5)
+        )
         if bar.repeat_both:
             repeat_x = boundary_x if is_last else x
             if is_last:
@@ -355,23 +400,38 @@ class Score:
                 left_dot_x, right_dot_x = repeat_x, repeat_x + 12
             svg.line(first_bar_x, staff_top, first_bar_x, staff_bottom, stroke=ink, stroke_width=s.bar_width)
             svg.line(second_bar_x, staff_top, second_bar_x, staff_bottom, stroke=ink, stroke_width=2.2)
-            for dot_y in (staff_top + 1.5 * s.staff_gap, staff_top + 2.5 * s.staff_gap):
+            for offset in repeat_dot_offsets:
+                dot_y = staff_top + offset * s.staff_gap
                 svg.ellipse(left_dot_x, dot_y, 1.7, 1.7, fill=ink)
                 svg.ellipse(right_dot_x, dot_y, 1.7, 1.7, fill=ink)
         elif bar.repeat_start:
-            if is_last:
+            if bar.repeat_dots == 4:
+                # The historical four-dot form encloses the dot column
+                # between two strokes. At an internal boundary, the left
+                # stroke coincides with the preceding measure's barline.
+                if is_last:
+                    first_bar_x, dot_x, second_bar_x = (
+                        boundary_x - 8, boundary_x - 4, boundary_x
+                    )
+                else:
+                    first_bar_x, dot_x, second_bar_x = x, x + 4, x + 8
+            elif is_last:
                 repeat_x = boundary_x
                 first_bar_x, second_bar_x, dot_x = repeat_x - 8, repeat_x - 4, repeat_x + 2
             else:
-                first_bar_x, second_bar_x, dot_x = x + 4, x + 8, x + 12
+                # Reuse the shared measure boundary as the first stroke so a
+                # normal start repeat has two visible strokes, not three.
+                first_bar_x, second_bar_x, dot_x = x, x + 4, x + 8
             svg.line(first_bar_x, staff_top, first_bar_x, staff_bottom, stroke=ink, stroke_width=s.bar_width)
             svg.line(second_bar_x, staff_top, second_bar_x, staff_bottom, stroke=ink, stroke_width=2.2)
-            for dot_y in (staff_top + 1.5 * s.staff_gap, staff_top + 2.5 * s.staff_gap):
+            for offset in repeat_dot_offsets:
+                dot_y = staff_top + offset * s.staff_gap
                 svg.ellipse(dot_x, dot_y, 1.7, 1.7, fill=ink)
         if bar.repeat_end:
             svg.line(boundary_x - 7, staff_top, boundary_x - 7, staff_bottom, stroke=ink, stroke_width=s.bar_width)
             svg.line(boundary_x - 3, staff_top, boundary_x - 3, staff_bottom, stroke=ink, stroke_width=2.2)
-            for dot_y in (staff_top + 1.5 * s.staff_gap, staff_top + 2.5 * s.staff_gap):
+            for offset in repeat_dot_offsets:
+                dot_y = staff_top + offset * s.staff_gap
                 svg.ellipse(boundary_x - 12, dot_y, 1.7, 1.7, fill=ink)
         elif not (bar.repeat_both or (bar.repeat_start and is_last)):
             svg.line(boundary_x, staff_top, boundary_x, staff_bottom, stroke=ink,
@@ -423,6 +483,14 @@ class Score:
         filled = note.duration not in (1, 2)
         svg.ellipse(x, y, s.note_width / 2, s.note_height / 2,
                     fill=ink if filled else "none", stroke=ink, stroke_width=1.1)
+        if note.dots:
+            # A dot following a line note is conventionally moved into the
+            # space above so it cannot disappear into the staff line.
+            dot_y = y - s.staff_gap / 2 if note.step % 2 == 0 else y
+            first_dot_x = x + s.note_width / 2 + 4.0
+            for dot_index in range(note.dots):
+                svg.ellipse(first_dot_x + dot_index * 5.0, dot_y, 1.45, 1.45,
+                            fill=ink)
         if note.duration != 1:
             if stem_up is None:
                 stem_up = note.step < 0.5
@@ -485,6 +553,26 @@ class Score:
                          stroke=ink, stroke_width=s.staff_width)
                 yy += s.staff_gap
 
+    @staticmethod
+    def _beam_groups(
+        positions: Sequence[tuple[Note, float]],
+    ) -> list[tuple[tuple[Note, float], ...]]:
+        """Split consecutive short notes at rests and explicit beam breaks."""
+        groups: list[tuple[tuple[Note, float], ...]] = []
+        group: list[tuple[Note, float]] = []
+        for note, x in positions:
+            if note.duration in (8, 16) and not note.rest:
+                group.append((note, x))
+                if note.beam_break_after:
+                    groups.append(tuple(group))
+                    group = []
+            elif group:
+                groups.append(tuple(group))
+                group = []
+        if group:
+            groups.append(tuple(group))
+        return groups
+
     def _beam_directions(self, positions: Sequence[tuple[Note, float]]) -> dict[float, bool]:
         """Choose one stem direction for every beamed group.
 
@@ -494,16 +582,11 @@ class Score:
         stem up, notes mostly above it stem down.
         """
         directions: dict[float, bool] = {}
-        group: list[tuple[Note, float]] = []
-        for note, x in positions + [(Note("B4", 4), float("nan"))]:
-            if note.duration in (8, 16) and not note.rest:
-                group.append((note, x))
-            elif group:
-                if len(group) >= 2:
-                    stem_up = sum(note.step for note, _ in group) / len(group) < 0.5
-                    for _, note_x in group:
-                        directions[note_x] = stem_up
-                group = []
+        for group in self._beam_groups(positions):
+            if len(group) >= 2:
+                stem_up = sum(note.step for note, _ in group) / len(group) < 0.5
+                for _, note_x in group:
+                    directions[note_x] = stem_up
         return directions
 
     def _beam_ends(
@@ -514,23 +597,18 @@ class Score:
     ) -> dict[float, float]:
         """Return each beamed stem's endpoint on the sloped beam line."""
         ends: dict[float, float] = {}
-        group: list[tuple[Note, float]] = []
-        for note, x in positions + [(Note("B4", 4), float("nan"))]:
-            if note.duration in (8, 16) and not note.rest:
-                group.append((note, x))
-            elif group:
-                if len(group) >= 2:
-                    stem_up = beam_directions[group[0][1]]
-                    beam_y1, beam_y2 = self._beam_line(group, staff_top, stem_up)
-                    first_x = self._stem_x(group[0], stem_up)
-                    last_x = self._stem_x(group[-1], stem_up)
-                    for item in group:
-                        note_x = item[1]
-                        stem_x = self._stem_x(item, stem_up)
-                        ends[note_x] = self._line_y(
-                            stem_x, first_x, beam_y1, last_x, beam_y2
-                        )
-                group = []
+        for group in self._beam_groups(positions):
+            if len(group) >= 2:
+                stem_up = beam_directions[group[0][1]]
+                beam_y1, beam_y2 = self._beam_line(group, staff_top, stem_up)
+                first_x = self._stem_x(group[0], stem_up)
+                last_x = self._stem_x(group[-1], stem_up)
+                for item in group:
+                    note_x = item[1]
+                    stem_x = self._stem_x(item, stem_up)
+                    ends[note_x] = self._line_y(
+                        stem_x, first_x, beam_y1, last_x, beam_y2
+                    )
         return ends
 
     def _beam_line(
@@ -627,16 +705,9 @@ class Score:
 
     def _draw_beams(self, svg: SVG, positions: Sequence[tuple[Note, float]], staff_top: float,
                     beam_directions: dict[float, bool]) -> None:
-        s = self.style
-        ink = s.ink
-        group: list[tuple[Note, float]] = []
-        for note, x in positions + [(Note("B4", 4), float("nan"))]:
-            if note.duration in (8, 16) and not note.rest:
-                group.append((note, x))
-            elif group:
-                if len(group) >= 2:
-                    self._beam_group(svg, group, staff_top, beam_directions[group[0][1]])
-                group = []
+        for group in self._beam_groups(positions):
+            if len(group) >= 2:
+                self._beam_group(svg, group, staff_top, beam_directions[group[0][1]])
 
     def _beam_group(self, svg: SVG, group: Sequence[tuple[Note, float]], staff_top: float,
                     stem_up: bool) -> None:

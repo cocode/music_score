@@ -20,8 +20,14 @@ from music_score import Bar, Note, Score, Style, System
 def _note(value: Any, key: str) -> Note:
     """Convert a JSON note string or object into a ``Note``."""
     if isinstance(value, str):
-        pitch, duration = value.rsplit(":", 1)
-        data: dict[str, Any] = {"pitch": pitch, "duration": int(duration)}
+        pitch, duration_token = value.rsplit(":", 1)
+        duration_text = duration_token.rstrip(".")
+        dots = len(duration_token) - len(duration_text)
+        data: dict[str, Any] = {
+            "pitch": pitch,
+            "duration": int(duration_text),
+            "dots": dots,
+        }
     elif isinstance(value, dict):
         data = dict(value)
     else:
@@ -39,6 +45,8 @@ def _note(value: Any, key: str) -> Note:
         duration=int(data.get("duration", 4)),
         accidental=accidental,
         rest=bool(data.get("rest", False)),
+        beam_break_after=bool(data.get("beam_break_after", False)),
+        dots=int(data.get("dots", 0)),
     )
 
 
@@ -64,6 +72,7 @@ def score_from_dict(data: dict[str, Any]) -> Score:
                 repeat_start=bool(options.get("repeat_start", False)),
                 repeat_end=bool(options.get("repeat_end", False)),
                 repeat_both=bool(options.get("repeat_both", False)),
+                repeat_dots=int(options.get("repeat_dots", 2)),
                 segno=bool(options.get("segno", False)),
                 segno_start=bool(options.get("segno_start", False)),
                 fermata=bool(options.get("fermata", False)),
@@ -124,7 +133,10 @@ def _print_notes(scores: Sequence[Score]) -> None:
         for line_number, system in enumerate(score.systems, 1):
             bars = []
             for bar in system.bars:
-                bars.append(" ".join(f"{note.pitch}/{note.duration}" for note in bar.notes))
+                bars.append(" ".join(
+                    f"{note.pitch}/{note.duration}{'.' * note.dots}"
+                    for note in bar.notes
+                ))
             print(f"  line {line_number}: " + " | ".join(bars))
 
 
