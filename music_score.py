@@ -390,6 +390,7 @@ class Score:
             if bar.repeat_dots == 4
             else (1.5, 2.5)
         )
+        repeat_start_dot_x: Optional[float] = None
         if bar.repeat_both:
             repeat_x = boundary_x if is_last else x
             if is_last:
@@ -422,6 +423,7 @@ class Score:
                 # Reuse the shared measure boundary as the first stroke so a
                 # normal start repeat has two visible strokes, not three.
                 first_bar_x, second_bar_x, dot_x = x, x + 4, x + 8
+            repeat_start_dot_x = dot_x
             svg.line(first_bar_x, staff_top, first_bar_x, staff_bottom, stroke=ink, stroke_width=s.bar_width)
             svg.line(second_bar_x, staff_top, second_bar_x, staff_bottom, stroke=ink, stroke_width=2.2)
             for offset in repeat_dot_offsets:
@@ -442,7 +444,8 @@ class Score:
         if bar.segno:
             self._draw_segno(svg, boundary_x - 7, staff_top - 17)
         if bar.segno_start:
-            self._draw_segno(svg, x + 18, staff_top - 17)
+            segno_x = repeat_start_dot_x if repeat_start_dot_x is not None else x + 18
+            self._draw_segno(svg, segno_x, staff_top - 17)
         if bar.fermata:
             fermata_x = boundary_x
             svg.path(
@@ -522,7 +525,7 @@ class Score:
             else:
                 y = stem_end - offset
                 svg.path(
-                    f"M {stem_x:g} {y:g} q -7 -2 -10 -7 q 5 2 10 2 Z",
+                    f"M {stem_x:g} {y:g} q 7 -2 10 -7 q -5 2 -10 2 Z",
                     fill=ink,
                 )
 
