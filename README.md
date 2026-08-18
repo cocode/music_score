@@ -18,6 +18,11 @@ Key-signature accidentals are also placed on fixed staff positions. For
 example, in treble-clef D major, F-sharp is on the top line and C-sharp is in
 the third space; they are not interchangeable decorations.
 
+The renderer uses the Unicode segno character `𝄋` with **Noto Music** as its
+primary font family. The bundled `NotoMusic-Regular.ttf` is embedded into each
+generated SVG, so the segno does not depend on the viewer having the font
+installed.
+
 ```sh
 python example.py
 ```
@@ -58,7 +63,7 @@ becomes `top_line.svg`.
 
 The compact JSON note form is `"PITCH:DURATION"`, for example
 `"A4:8"` for an eighth note or `"C5:4"` for a quarter note. A bar can also
-carry `final`, `repeat_start`, `repeat_end`, `segno`, and `rehearsal` fields. For a
+carry `final`, `repeat_start`, `repeat_end`, `repeat_both`, `segno`, and `rehearsal` fields. For a
 visible local accidental or a rest, use an object such as
 `{"pitch": "F4", "duration": 8, "accidental": "♮"}` or
 `{"duration": 4, "rest": true}`.
