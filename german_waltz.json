@@ -77,7 +77,7 @@
     {
       "number": "2.",
       "key": "G",
-      "time": "6/8",
+      "time": "3/8",
       "bars": [
         {"notes": ["D5:16", "C5:16"] },
         {"notes": ["B4:8", "B4:8", "A4:8"] },
@@ -90,21 +90,29 @@
     },
     {
       "key": "G",
-      "time": "6/8",
+      "time": "3/8",
+      "show_time": false,
+      "bars": [
+        {"notes": ["G5:8", "F5:8", "E5:8"]},
+        {"notes": ["D5:4"], "repeat":"both"},
+        {"notes": ["D5:8"]},
+        {"notes": ["A5:8", "D5:8", "D5:8"]},
+        {"notes": ["B5:8", "D5:8", "D5:8"]},
+        {"notes": ["D5':8", "C5:8", "B5:8"], "slurs": "0:2"},
+        {"notes": ["B5:8", "A5:8", "G5:8"], "slurs": "0:2"},
+        {"notes": ["G5:8", "F5:8", "E5:8"], "slurs": "0:2"}
+      ]
+    },
+    {
+      "key": "G",
+      "time": "3/8",
       "show_time": false,
       "bars": [
       ]
     },
     {
       "key": "G",
-      "time": "6/8",
-      "show_time": false,
-      "bars": [
-      ]
-    },
-    {
-      "key": "G",
-      "time": "6/8",
+      "time": "3/8",
       "show_time": false,
       "bars": [
       ]
