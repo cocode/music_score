@@ -52,30 +52,27 @@
     },
     {
       "number": "2.",
-      "key": "D",
-      "time": "3/8",
+      "key": "G",
+      "time": "6/8",
       "bars": [
-        {"notes": ["A5:16", "G5:16"]},
-        {"notes": ["F5:8.", "G5:16", "E5:16", "F5:16"], "repeat_start": true, "repeat_dots": 4, "segno_start": true},
-        {"notes": ["D5:8", {"pitch": "A4", "duration": 8, "beam_break_after": true}, "D5:16", "F5:16"]},
-        {"notes": ["E5:8", {"pitch": "A4", "duration": 8, "beam_break_after": true}, "E5:16", "G5:16"]},
-        {"notes": ["F5:16", "E5:16", "D5:16", "C5:16", "D5:16", "E5:16"]}
+        {"notes": ["G4:8"]},
+        {"notes": ["B4:4.", "C5:8", "D5:8", "E5:8"]},
+        {"notes": ["D5:4.", "G5:8", "F5:8", "E5:8"]},
+        {"notes": ["D5:4",  "D5:8|", "E5:8", "D5:8", "C5:8"]},
+        {"notes": ["B4:8",  "A4:8", "G4:8|","F4:8", "E4:8", "D4:8"]}
       ]
     },
     {
-      "key": "D",
-      "time": "3/8",
+      "key": "G",
+      "time": "6/8",
       "show_time": false,
       "bars": [
-        {"notes": ["F5:8.", "G5:16", "E5:16", "F5:16"]},
-        {"notes": ["D5:8",  {"pitch": "A4", "duration": 8, "beam_break_after": true}, "D5:16", "F5:16"]},
-        {"notes": ["E5:16", "A5:16", "G#5:16", "A5:16", "G♮5:16", "E5:16"]},
-        {"notes": ["D5:4"], "repeat_both": true}
+        {"notes": ["F5:8.", "G5:16", "E5:16", "F5:16"]}
       ]
     },
     {
-      "key": "D",
-      "time": "3/8",
+      "key": "G",
+      "time": "6/8",
       "show_time": false,
       "bars": [
         {"notes": ["F5:16", "E5:16"]},
@@ -86,8 +83,8 @@
       ]
     },
     {
-      "key": "D",
-      "time": "3/8",
+      "key": "G",
+      "time": "6/8",
       "show_time": false,
       "bars": [
         {"notes": ["G5:16", "F5:16", "G5:16", "A5:16", "B5:16", "G5:16"]},
