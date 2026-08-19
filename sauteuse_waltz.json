@@ -1,66 +1,46 @@
 {
   "title": "Tunes adapted to the Sauteuse Waltz.",
-  "footer": "i am a footed.",
+  "footer": "Engraved for Wilson's Treatise on German & French Waltzing.",
   "system_gap": 68,
   "systems": [
     {
       "number": "1.",
       "no_label": true,
-      "key": "D",
-      "time": "3/8",
+      "key": "C",
+      "time": "6/8",
       "bars": [
         {"notes": ["C5:8"]},
-        {"notes": ["E5:4", "C5:8|", "C5:16", "B5:16", "C5:16"]},
-        {"notes": [
-          {"pitch": "C5", "duration": 16},
-          "D5:8",
-          "F5:8",
-          {"pitch": "B5", "duration": 8}
-        ]},
-        {"notes": [
-          {"pitch": "C5", "duration": 16},
-          "D5:8",
-          "F5:8",
-          {"pitch": "B5", "duration": 8}
-        ]},
-        {"notes": ["D5:8", "E5:8", "D5:8", "G5:16", "G5:16"]},
-        {"notes": ["C5:8", "C5:16"]}
+        {"notes": ["E5:4", "C5:8", "C5:16", "B4:16", "C5:8"]},
+        {"notes": ["E5:4", "C5:8", "C5:16", "B4:16", "C5:8"]},
+        {"notes": ["D5:16", "E5:16", "D5:16", "G5:4", "G5:8"]},
+        {"notes": ["E5:4.", "B4:4", "C5:8"], "final": true}
       ]
     },
     {
-      "key": "D",
-      "time": "3/8",
+      "key": "C",
+      "time": "6/8",
       "show_time": false,
       "bars": [
-        {"notes": ["A4:8", "D5:8", "F5:8"]},
-        {"notes": ["A5:8", "G5:8", "E5:8"]},
-        {"notes": ["D5:4"], "repeat_end": true},
-        {"notes": ["A5:8"]},
-        {"notes": ["A5:16", "F5:16", "D5:8", "A5:8"]},
-        {"notes": ["E5:4", "A4:8"]},
-        {"notes": ["A5:16", "F5:16", "D5:8", "A5:8"]}
+        {"notes": ["E5:4", "D5:8|", "D5:8", "B4:8", "D5:8"]},
+        {"notes": ["E5:4", "D5:8|", "D5:8", "B4:8", "D5:8"]},
+        {"notes": ["D5:8", "E5:8", "F5:8|", "G4:8", "A4:8", "B4:8"]},
+        {"notes": ["D5:4.", "D5:4"]}
       ]
     },
     {
-      "key": "D",
-      "time": "3/8",
+      "key": "C",
+      "time": "6/8",
       "show_time": false,
       "bars": [
-        {"notes": ["E5:4", "A4:8"]},
-        {"notes": [
-          {"pitch": "A4", "duration": 16},
-          "D5:8",
-          "F5:8",
-          {"pitch": "F5", "duration": 8}
-        ]},
-        {"notes": ["A4:8", "D5:8", "F5:8"]},
-        {"notes": ["A5:8", "B5:8", "A5:8"]},
-        {"notes": ["F5:4", "A4:8"]},
-        {"notes": ["A5:16", "F5:16", "D5:8", "D6:8"]}
+        {"notes": ["E5:8"]},
+        {"notes": ["D5:4", "G5:8", "E5:4", "G5:8"]},
+        {"notes": ["F5:4", "G5:8", "E5:4", "G5:8"]},
+        {"notes": ["D5:4", "G5:8", "E5:4", "G5:8"]},
+        {"notes": ["F5:8", "D5:8", "B4:8", "C5:4", "E5:8"]}
       ]
     },
     {
-      "key": "D",
+      "key": "C",
       "time": "3/8",
       "show_time": false,
       "bars": [
@@ -73,7 +53,7 @@
       ]
     },
     {
-      "key": "D",
+      "key": "C",
       "time": "3/8",
       "show_time": false,
       "bars": [
