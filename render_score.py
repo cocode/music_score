@@ -21,12 +21,16 @@ def _note(value: Any, key: str) -> Note:
     """Convert a JSON note string or object into a ``Note``."""
     if isinstance(value, str):
         pitch, duration_token = value.rsplit(":", 1)
+        beam_break_after = duration_token.endswith("|")
+        if beam_break_after:
+            duration_token = duration_token[:-1]
         duration_text = duration_token.rstrip(".")
         dots = len(duration_token) - len(duration_text)
         data: dict[str, Any] = {
             "pitch": pitch,
             "duration": int(duration_text),
             "dots": dots,
+            "beam_break_after": beam_break_after,
         }
     elif isinstance(value, dict):
         data = dict(value)
@@ -86,6 +90,7 @@ def score_from_dict(data: dict[str, Any]) -> Score:
             clef=str(system_data.get("clef", data.get("clef", "treble"))),
             key=key,
             time=str(system_data.get("time", data.get("time", "3/8"))),
+            show_time=bool(system_data.get("show_time", True)),
             label=system_data.get("label"),
         ))
 
@@ -135,6 +140,7 @@ def _print_notes(scores: Sequence[Score]) -> None:
             for bar in system.bars:
                 bars.append(" ".join(
                     f"{note.pitch}/{note.duration}{'.' * note.dots}"
+                    f"{'|' if note.beam_break_after else ''}"
                     for note in bar.notes
                 ))
             print(f"  line {line_number}: " + " | ".join(bars))

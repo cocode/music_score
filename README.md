@@ -67,6 +67,10 @@ python render_score.py part-one.json part-two.json -o combined.svg
 A file containing one system directly—`number`, `no_label`, `key`, `time`, and
 `bars` at the top level—is also accepted.
 
+Set `"show_time": false` on a continuation system to retain its meter in the
+data without printing the time signature again. The reclaimed horizontal
+space is used for the notes.
+
 If `-o`/`--output` is omitted, the input basename is used: `top_line.json`
 becomes `top_line.svg`.
 
@@ -93,8 +97,10 @@ Repeat signs use the standard two central dots by default. Set
 `repeat_both` to reproduce the historical variant with one dot in every staff
 space.
 
-To end a beam group after a particular eighth or sixteenth note, use the
-object form with `"beam_break_after": true`:
+To end a beam group after a particular eighth or sixteenth note, append `|` to
+the compact form, as in `"A4:8|"`. Put it after augmentation dots when both
+are needed: `"A5:8.|"`. The equivalent object form uses
+`"beam_break_after": true`:
 
 ```json
 {"notes": [

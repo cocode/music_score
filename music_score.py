@@ -119,6 +119,7 @@ class System:
     clef: str = "treble"
     key: str = "F#"
     time: str = "3/8"
+    show_time: bool = True
     label: Optional[str] = None
 
     def __post_init__(self) -> None:
@@ -141,6 +142,7 @@ class Style:
     accidental_spacing: float = 24.0
     beam_thickness: float = 4.0
     beam_clearance: float = 1.0
+    maximum_beamed_note_gap: float = 40.0
     minimum_intermediate_stem_ratio: float = 0.5
     bar_width: float = 1.2
     page_width: float = 780.0
@@ -292,12 +294,13 @@ class Score:
             svg.text(key_x + index * 10, y, symbol, fill=ink,
                      font_family="DejaVu Sans, Georgia, serif", font_size=20)
         time_x = key_x + len(self._key_accidentals(system.key)) * 10 + 16
-        if system.time:
+        draw_time = bool(system.time and system.show_time)
+        if draw_time:
             numerator, denominator = system.time.split("/", 1)
             svg.text(time_x, staff_top + 12, numerator, fill=ink, font_family="Georgia, serif", font_size=20, font_weight="bold")
             svg.text(time_x, staff_top + 36, denominator, fill=ink, font_family="Georgia, serif", font_size=20, font_weight="bold")
 
-        content_left = time_x + 26
+        content_left = time_x + 26 if draw_time else time_x
         content_right = right - 3
         bar_widths = [self._bar_width(bar) for bar in system.bars]
         scale = max(0.65, (content_right - content_left) / max(1, sum(bar_widths)))
@@ -342,24 +345,65 @@ class Score:
     def _note_positions(
         self, bar: Bar, x: float, width: float
     ) -> list[tuple[Note, float]]:
-        """Lay out notes rhythmically, reserving leading room for accidentals."""
+        """Lay out rhythmic onsets while reserving symbol and boundary space."""
         s = self.style
-        content_x = x + 8
-        content_width = width - 16
-        total_units = sum(note.rhythmic_units for note in bar.notes) or 1
+        if not bar.notes:
+            return []
+
+        # Ordinary barlines need only a small inset. Repeat signs occupy more
+        # room inside the measure and therefore receive a larger safety area.
+        left_padding = 16.0 if (bar.repeat_start or bar.repeat_both) else 8.0
+        right_padding = 22.0 if (bar.repeat_end or bar.repeat_both) else 8.0
+        content_left = x + left_padding
+        content_right = x + width - right_padding
         accidental_space = sum(
             s.accidental_spacing for note in bar.notes if note.display_accidental
         )
-        rhythmic_width = max(1.0, content_width - accidental_space)
+
+        if len(bar.notes) == 1:
+            note = bar.notes[0]
+            note_x = (content_left + content_right) / 2
+            if note.display_accidental:
+                note_x = max(note_x, content_left + s.accidental_spacing)
+            return [(note, note_x)]
+
+        rhythmic_width = max(
+            1.0, content_right - content_left - accidental_space
+        )
+        last_onset = sum(note.rhythmic_units for note in bar.notes[:-1])
 
         positions: list[tuple[Note, float]] = []
-        cursor = content_x
+        onset = 0.0
+        accidental_offset = 0.0
         for note in bar.notes:
             if note.display_accidental:
-                cursor += s.accidental_spacing
-            note_width = rhythmic_width * note.rhythmic_units / total_units
-            positions.append((note, cursor + note_width / 2))
-            cursor += note_width
+                accidental_offset += s.accidental_spacing
+            note_x = (
+                content_left
+                + accidental_offset
+                + rhythmic_width * onset / last_onset
+            )
+            positions.append((note, note_x))
+            onset += note.rhythmic_units
+
+        # Sparse measures can receive a large share of the system width. Do
+        # not stretch one beam across that entire allocation; retain the
+        # extra room after the compact beam group instead.
+        for index in range(1, len(positions)):
+            previous_note, previous_x = positions[index - 1]
+            note, note_x = positions[index]
+            shares_beam = (
+                previous_note.duration in (8, 16)
+                and note.duration in (8, 16)
+                and not previous_note.rest
+                and not note.rest
+                and not previous_note.beam_break_after
+            )
+            if shares_beam and note_x - previous_x > s.maximum_beamed_note_gap:
+                shift = note_x - previous_x - s.maximum_beamed_note_gap
+                for shifted_index in range(index, len(positions)):
+                    shifted_note, shifted_x = positions[shifted_index]
+                    positions[shifted_index] = (shifted_note, shifted_x - shift)
         return positions
 
     def _draw_bar(self, svg: SVG, bar: Bar, x: float, width: float, staff_top: float,

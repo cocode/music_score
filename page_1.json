@@ -31,6 +31,7 @@
     {
       "key": "D",
       "time": "3/8",
+      "show_time": false,
       "bars": [
         {"notes": ["A4:8", "D5:8", "F5:8"]},
         {"notes": ["A5:8", "G5:8", "E5:8"]},
@@ -44,6 +45,7 @@
     {
       "key": "D",
       "time": "3/8",
+      "show_time": false,
       "bars": [
         {"notes": ["E5:4", "A4:8"]},
         {"notes": [
@@ -61,6 +63,7 @@
     {
       "key": "D",
       "time": "3/8",
+      "show_time": false,
       "bars": [
         {"notes": ["B5:4", "G5:16", "E5:16"]},
         {"notes": ["C5:8", "C5:16", "D5:16", "E5:16", "C5:16"]},
@@ -73,6 +76,7 @@
     {
       "key": "D",
       "time": "3/8",
+      "show_time": false,
       "bars": [
         {"notes": ["D5:4", "F5:8"]},
         {"notes": ["E5:8", "C5:8", "D5:8"]},
@@ -97,6 +101,7 @@
     {
       "key": "D",
       "time": "3/8",
+      "show_time": false,
       "bars": [
         {"notes": ["F5:8.", "G5:16", "E5:16", "F5:16"]},
         {"notes": ["D5:8",  {"pitch": "A4", "duration": 8, "beam_break_after": true}, "D5:16", "F5:16"]},
@@ -107,6 +112,7 @@
     {
       "key": "D",
       "time": "3/8",
+      "show_time": false,
       "bars": [
         {"notes": ["F5:16", "E5:16"]},
         {"notes": ["D5:16", "C5:16", "B4:16", "A4:16", "B4:16", "C5:16"]},
@@ -118,6 +124,7 @@
     {
       "key": "D",
       "time": "3/8",
+      "show_time": false,
       "bars": [
         {"notes": ["G5:16", "F5:16", "G5:16", "A5:16", "B5:16", "G5:16"]},
         {"notes": ["F5:16", "E5:16", "F5:16", "G5:16", "A5:16", "G5:16"]},
