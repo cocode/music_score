@@ -143,7 +143,7 @@ class Style:
     beam_clearance: float = 1.0
     minimum_intermediate_stem_ratio: float = 0.5
     bar_width: float = 1.2
-    page_width: float = 900.0
+    page_width: float = 780.0
     margin_x: float = 54.0
 
 
