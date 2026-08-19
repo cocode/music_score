@@ -20,7 +20,12 @@ from music_score import Bar, Note, Score, Style, System
 def _note(value: Any, key: str) -> Note:
     """Convert a JSON note string or object into a ``Note``."""
     if isinstance(value, str):
-        pitch, duration_token = value.rsplit(":", 1)
+        try:
+            pitch, duration_token = value.rsplit(":", 1)
+        except Exception as e:
+            print(F"ERROR! got '{e} for {value}")
+            raise e
+  
         beam_break_after = duration_token.endswith("|")
         if beam_break_after:
             duration_token = duration_token[:-1]
