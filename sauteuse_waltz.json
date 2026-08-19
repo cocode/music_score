@@ -67,7 +67,10 @@
       "time": "6/8",
       "show_time": false,
       "bars": [
-        {"notes": ["C5:4.", "D5:16", "E5:16", "F5:16"]}
+        {"notes": ["C5:4.", "D5:16", "E5:16", "F5:16"]},
+        {"notes": ["D5:4.", "G5:16", "F5:16", "E5:16"]},
+        {"notes": ["D5:4", "D5:8|", "D5:8", "E5:8", "F5:8"]},
+        {"notes": ["G5:4.", "G5:4"], "fermata": true, "rehearsal": "Fine.", "final":true}
       ]
     },
     {
