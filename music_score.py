@@ -34,7 +34,7 @@ from typing import Iterable, Optional, Sequence
 PITCHES = {"C": 0, "D": 1, "E": 2, "F": 3, "G": 4, "A": 5, "B": 6}
 NATURAL_STEPS = {"C": 0, "D": 1, "E": 2, "F": 3, "G": 4, "A": 5, "B": 6}
 DIATONIC_FROM_C = {"C": 0, "D": 1, "E": 2, "F": 3, "G": 4, "A": 5, "B": 6}
-NOTE_RE = re.compile(r"^([A-Ga-g])([#b♮]?)(-?\d+)$")
+NOTE_RE = re.compile(r"^([A-Ga-g])([#♯b♭♮]?)(-?\d+)$")
 
 
 @dataclass(frozen=True)
@@ -52,12 +52,16 @@ class Note:
     rest: bool = False
     beam_break_after: bool = False
     dots: int = 0
+    staccato: bool = False
+    accent: Optional[str] = None
 
     def __post_init__(self) -> None:
         if self.duration not in (1, 2, 4, 8, 16):
             raise ValueError("duration must be one of 1, 2, 4, 8, or 16")
         if type(self.dots) is not int or self.dots < 0:
             raise ValueError("dots must be a non-negative integer")
+        if self.accent not in (None, ">", "<"):
+            raise ValueError("accent must be '>' or '<'")
         if not self.rest:
             match = NOTE_RE.match(self.pitch)
             if not match:
@@ -81,15 +85,33 @@ class Note:
 
     @property
     def display_accidental(self) -> str:
-        if self.accidental is not None:
-            return self.accidental
-        return self.parsed[1]
+        accidental = self.accidental if self.accidental is not None else self.parsed[1]
+        # Accept both ASCII and Unicode spellings in JSON, while keeping the
+        # renderer's internal accidental choices compact.
+        return {"♯": "#", "♭": "b"}.get(accidental, accidental)
 
     @property
     def rhythmic_units(self) -> float:
         """Duration in sixteenth-note units, including augmentation dots."""
         dot_factor = 2.0 - 2.0 ** (-self.dots)
         return (16 / self.duration) * dot_factor
+
+
+@dataclass(frozen=True)
+class Slur:
+    """A curved legato mark spanning note indices within one bar."""
+
+    start: int
+    end: int
+    placement: str = "above"
+
+    def __post_init__(self) -> None:
+        if type(self.start) is not int or type(self.end) is not int:
+            raise ValueError("slur start and end must be note indices")
+        if self.start < 0 or self.end <= self.start:
+            raise ValueError("slur end must be greater than its start")
+        if self.placement not in ("above", "below"):
+            raise ValueError("slur placement must be 'above' or 'below'")
 
 
 @dataclass
@@ -104,9 +126,14 @@ class Bar:
     fermata: bool = False
     final: bool = False
     rehearsal: Optional[str] = None
+    slurs: Sequence[Slur] = field(default_factory=tuple)
 
     def __post_init__(self) -> None:
         self.notes = tuple(self.notes)
+        self.slurs = tuple(self.slurs)
+        for slur in self.slurs:
+            if slur.end >= len(self.notes):
+                raise ValueError("slur note index is outside this bar")
         if self.repeat_dots not in (2, 4):
             raise ValueError("repeat_dots must be 2 or 4")
 
@@ -147,6 +174,7 @@ class Style:
     bar_width: float = 1.2
     page_width: float = 780.0
     margin_x: float = 54.0
+    slur_clearance: float = 2.0
 
 
 class SVG:
@@ -427,6 +455,10 @@ class Score:
         # Paint the beam over the stem ends so no stem cap protrudes through
         # the opposite side of the joining stroke.
         self._draw_beams(svg, positions, staff_top, beam_directions)
+        self._draw_slurs(
+            svg, bar.slurs, positions, staff_top, staff_bottom,
+            beam_directions, beam_ends,
+        )
 
         boundary_x = x + width
         repeat_dot_offsets = (
@@ -436,13 +468,12 @@ class Score:
         )
         repeat_start_dot_x: Optional[float] = None
         if bar.repeat_both:
-            repeat_x = boundary_x if is_last else x
-            if is_last:
-                first_bar_x, second_bar_x = repeat_x - 8, repeat_x - 4
-                left_dot_x, right_dot_x = repeat_x - 12, repeat_x + 2
-            else:
-                first_bar_x, second_bar_x = repeat_x + 4, repeat_x + 8
-                left_dot_x, right_dot_x = repeat_x, repeat_x + 12
+            # ``repeat_both`` belongs to this bar's ending boundary.  It is
+            # a combined :||: sign, so keep its placement consistent whether
+            # the bar is internal or the last bar in the system.
+            repeat_x = boundary_x
+            first_bar_x, second_bar_x = repeat_x - 8, repeat_x - 4
+            left_dot_x, right_dot_x = repeat_x - 12, repeat_x + 2
             svg.line(first_bar_x, staff_top, first_bar_x, staff_bottom, stroke=ink, stroke_width=s.bar_width)
             svg.line(second_bar_x, staff_top, second_bar_x, staff_bottom, stroke=ink, stroke_width=2.2)
             for offset in repeat_dot_offsets:
@@ -480,8 +511,16 @@ class Score:
                 dot_y = staff_top + offset * s.staff_gap
                 svg.ellipse(boundary_x - 12, dot_y, 1.7, 1.7, fill=ink)
         elif not (bar.repeat_both or (bar.repeat_start and is_last)):
-            svg.line(boundary_x, staff_top, boundary_x, staff_bottom, stroke=ink,
-                     stroke_width=2.0 if bar.final else s.bar_width)
+            if bar.final:
+                # A final barline is a close thin-plus-thick pair, rather
+                # than merely a heavier ordinary barline.
+                svg.line(boundary_x - 4, staff_top, boundary_x - 4, staff_bottom,
+                         stroke=ink, stroke_width=s.bar_width)
+                svg.line(boundary_x, staff_top, boundary_x, staff_bottom,
+                         stroke=ink, stroke_width=2.2)
+            else:
+                svg.line(boundary_x, staff_top, boundary_x, staff_bottom,
+                         stroke=ink, stroke_width=s.bar_width)
         if bar.rehearsal:
             svg.text(boundary_x - width / 2, staff_bottom + 26, bar.rehearsal, fill=ink,
                      text_anchor="middle", font_family="Georgia, Times New Roman, serif", font_size=13)
@@ -504,12 +543,72 @@ class Score:
                  font_family="Noto Music, Bravura, DejaVu Sans, serif", font_size=30,
                  text_anchor="middle")
 
+    def _draw_slurs(
+        self,
+        svg: SVG,
+        slurs: Sequence[Slur],
+        positions: Sequence[tuple[Note, float]],
+        staff_top: float,
+        staff_bottom: float,
+        beam_directions: dict[float, bool],
+        beam_ends: dict[float, float],
+    ) -> None:
+        """Draw slurs whose endpoints are note indices in this bar."""
+        ink = self.style.ink
+        s = self.style
+        for slur in slurs:
+            start_x = positions[slur.start][1]
+            end_x = positions[slur.end][1]
+            midpoint_x = (start_x + end_x) / 2
+            arch = max(10.0, min(24.0, (end_x - start_x) * 0.18))
+            if slur.placement == "above":
+                endpoint_y = staff_top - 2.5
+                for note, note_x in positions[slur.start:slur.end + 1]:
+                    if note.rest:
+                        continue
+                    note_y = self._note_y(note, staff_top)
+                    endpoint_y = min(
+                        endpoint_y,
+                        note_y - s.note_height / 2 - s.slur_clearance,
+                    )
+                    stem_up = beam_directions.get(note_x, note.step < 0.5)
+                    if stem_up:
+                        stem_end = beam_ends.get(
+                            note_x,
+                            self._default_stem_end(note_y, stem_up),
+                        )
+                        endpoint_y = min(endpoint_y, stem_end - s.slur_clearance)
+                control_y = endpoint_y - arch
+            else:
+                endpoint_y = staff_bottom + 2.5
+                for note, note_x in positions[slur.start:slur.end + 1]:
+                    if note.rest:
+                        continue
+                    note_y = self._note_y(note, staff_top)
+                    endpoint_y = max(
+                        endpoint_y,
+                        note_y + s.note_height / 2 + s.slur_clearance,
+                    )
+                    stem_up = beam_directions.get(note_x, note.step < 0.5)
+                    if not stem_up:
+                        stem_end = beam_ends.get(
+                            note_x,
+                            self._default_stem_end(note_y, stem_up),
+                        )
+                        endpoint_y = max(endpoint_y, stem_end + s.slur_clearance)
+                control_y = endpoint_y + arch
+            svg.path(
+                f"M {start_x:g} {endpoint_y:g} Q {midpoint_x:g} {control_y:g} {end_x:g} {endpoint_y:g}",
+                fill="none", stroke=ink, stroke_width=1.5, stroke_linecap="round",
+            )
+
     def _draw_note(self, svg: SVG, note: Note, x: float, staff_top: float,
                    stem_up: Optional[bool] = None,
                    stem_end: Optional[float] = None) -> None:
         s = self.style
         ink = s.ink
         middle = staff_top + 2 * s.staff_gap
+        staff_bottom = staff_top + 4 * s.staff_gap
         if note.rest:
             y = middle
             if note.duration == 4:
@@ -519,6 +618,8 @@ class Score:
             return
 
         y = self._note_y(note, staff_top)
+        if stem_up is None:
+            stem_up = note.step < 0.5
         self._ledger_lines(svg, x, y, staff_top)
         accidental = note.display_accidental
         if accidental:
@@ -538,9 +639,33 @@ class Score:
             for dot_index in range(note.dots):
                 svg.ellipse(first_dot_x + dot_index * 5.0, dot_y, 1.45, 1.45,
                             fill=ink)
+        if note.staccato:
+            # This source places staccato dots above the staff. If the note
+            # is already above the staff, keep the dot above the note instead.
+            # This is distinct from augmentation dots, which sit beside the
+            # notehead.
+            staccato_y = min(
+                staff_top - s.staff_gap * 0.8,
+                y - s.staff_gap * 0.8,
+            )
+            svg.ellipse(x, staccato_y, 1.45, 1.45, fill=ink)
+        if note.accent:
+            # This source uses a small open wedge below the staff for a
+            # single-note accent. Keep it below the note if the note itself
+            # extends below the staff.
+            accent_y = max(
+                staff_bottom + 6.0,
+                y + s.note_height / 2 + 6.0,
+            )
+            side = 1.0 if note.accent == ">" else -1.0
+            svg.path(
+                f"M {x - side * 4:g} {accent_y - 4:g} "
+                f"L {x + side * 4:g} {accent_y:g} "
+                f"L {x - side * 4:g} {accent_y + 4:g}",
+                fill="none", stroke=ink, stroke_width=1.4,
+                stroke_linecap="round", stroke_linejoin="round",
+            )
         if note.duration != 1:
-            if stem_up is None:
-                stem_up = note.step < 0.5
             stem_x = x + s.note_width / 2 if stem_up else x - s.note_width / 2
             stem_y = y
             is_beamed = stem_end is not None

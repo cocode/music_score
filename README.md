@@ -78,11 +78,41 @@ The compact JSON note form is `"PITCH:DURATION"`, for example
 `"A4:8"` for an eighth note, `"C5:4"` for a quarter note, or `"G♮5:16"`
 for a sixteenth note with a displayed natural sign. Append one or more periods
 for augmentation dots: `"A5:8."` is dotted and `"A5:8.."` is double-dotted.
-A bar can also
-carry `final`, `repeat_start`, `repeat_end`, `repeat_both`, `segno`, and `rehearsal` fields. For a
+Append `!` to a compact note for staccato, as in `"A4:8!"`, or `>` for a
+single-note accent, as in `"A4:8>"`. A note object can
+also set `staccato: true` for the long form. Downward-stem staccato dots are
+placed above the staff, or above the note when the note is already above the
+staff. Accents are drawn below the staff to match the historical source; `<`
+is accepted as the mirrored accent glyph. A bar can also
+carry `final`, `repeat_start`, `repeat_end`, `repeat_both`, `segno`, `slurs`,
+and `rehearsal` fields. `final` draws a thin-plus-thick ending barline. For a
 visible local accidental or a rest, use an object such as
 `{"pitch": "F4", "duration": 8, "accidental": "♮"}` or
 `{"duration": 4, "rest": true}`.
+
+Slurs are represented as bar-local spans of note indices. The short form uses
+`{"above": "0:2"}` or `{"below": "0:2"}`; indices are zero-based and
+inclusive. This places a slur over the first three notes:
+
+```json
+{
+  "notes": [
+    "A4:8!",
+    "B4:8",
+    "C5:8"
+  ],
+  "slurs": [{"above": "0:2"}]
+}
+```
+
+The object form `{"start": 0, "end": 2, "placement": "above"}` remains
+supported. Compact note modifiers can be combined, for example
+`"A4:8.!>|"` means dotted, staccato, accented, and a beam break after the
+note.
+
+The current renderer supports slurs within one bar. Cross-bar slurs can be
+added later with the same span idea using bar-and-note references. Slurs
+automatically move away from noteheads and upward stems/beams when needed.
 
 The long form uses an integer `dots` field, such as
 `{"pitch": "A5", "duration": 8, "dots": 2}` for the same double-dotted
@@ -96,6 +126,10 @@ Repeat signs use the standard two central dots by default. Set
 `"repeat_dots": 4` on a bar with `repeat_start`, `repeat_end`, or
 `repeat_both` to reproduce the historical variant with one dot in every staff
 space.
+
+`repeat_both` draws a combined `:||:` sign after the annotated bar. Use it on
+the bar whose ending boundary carries the sign; use `repeat_start` when the
+sign belongs before a bar.
 
 To end a beam group after a particular eighth or sixteenth note, append `|` to
 the compact form, as in `"A4:8|"`. Put it after augmentation dots when both
@@ -127,7 +161,7 @@ score.write_svg("my-score.svg")
 ```
 
 Supported durations are whole, half, quarter, eighth, and sixteenth notes.
-Use `Note("F#4", 8)` or `Note("Bb4", 4)` for accidentals, and
+Use `Note("F#4", 8)` or `Note("B♭4", 4)` for accidentals, and
 `Note(duration=4, rest=True)` for a rest. `Bar` supports `repeat_start`,
 `repeat_end`, `final`, and a small text annotation through `rehearsal`.
 

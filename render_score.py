@@ -14,7 +14,7 @@ import json
 from pathlib import Path
 from typing import Any, Sequence
 
-from music_score import Bar, Note, Score, Style, System
+from music_score import Bar, Note, Score, Slur, Style, System
 
 
 def _note(value: Any, key: str) -> Note:
@@ -26,9 +26,18 @@ def _note(value: Any, key: str) -> Note:
             print(F"ERROR! got '{e} for {value}")
             raise e
   
-        beam_break_after = duration_token.endswith("|")
-        if beam_break_after:
-            duration_token = duration_token[:-1]
+        beam_break_after = "|" in duration_token
+        staccato = "!" in duration_token
+        accent_symbols = [symbol for symbol in (">", "<") if symbol in duration_token]
+        if len(accent_symbols) > 1:
+            raise ValueError("a note can have only one accent symbol")
+        accent = accent_symbols[0] if accent_symbols else None
+        duration_token = (
+            duration_token.replace("|", "")
+            .replace("!", "")
+            .replace(">", "")
+            .replace("<", "")
+        )
         duration_text = duration_token.rstrip(".")
         dots = len(duration_token) - len(duration_text)
         data: dict[str, Any] = {
@@ -36,6 +45,8 @@ def _note(value: Any, key: str) -> Note:
             "duration": int(duration_text),
             "dots": dots,
             "beam_break_after": beam_break_after,
+            "staccato": staccato,
+            "accent": accent,
         }
     elif isinstance(value, dict):
         data = dict(value)
@@ -44,6 +55,9 @@ def _note(value: Any, key: str) -> Note:
 
     pitch = str(data.get("pitch", "B4"))
     accidental = data.get("accidental")
+    accent = data.get("accent")
+    if accent is True:
+        accent = ">"
     # In D major, these accidentals are already present in the key signature.
     # An explicit accidental field still wins, so JSON can request a visible
     # natural/sharp/flat when needed.
@@ -56,7 +70,34 @@ def _note(value: Any, key: str) -> Note:
         rest=bool(data.get("rest", False)),
         beam_break_after=bool(data.get("beam_break_after", False)),
         dots=int(data.get("dots", 0)),
+        staccato=bool(data.get("staccato", False)),
+        accent=accent,
     )
+
+
+def _slurs(value: Any) -> list[Slur]:
+    """Parse bar-local slurs as note-index spans."""
+    result: list[Slur] = []
+    for item in value or []:
+        if not isinstance(item, dict):
+            raise ValueError("slur must be an object with start and end indices")
+        if len(item) == 1 and ("above" in item or "below" in item):
+            placement, span = next(iter(item.items()))
+            if not isinstance(span, str) or ":" not in span:
+                raise ValueError("short slur must use e.g. {\"above\": \"0:2\"}")
+            start_text, end_text = span.split(":", 1)
+            result.append(Slur(
+                start=int(start_text.strip()),
+                end=int(end_text.strip()),
+                placement=placement,
+            ))
+        else:
+            result.append(Slur(
+                start=int(item["start"]),
+                end=int(item["end"]),
+                placement=str(item.get("placement", "above")),
+            ))
+    return result
 
 
 def score_from_dict(data: dict[str, Any]) -> Score:
@@ -78,6 +119,7 @@ def score_from_dict(data: dict[str, Any]) -> Score:
                 options = bar_data
             bars.append(Bar(
                 [_note(value, key) for value in note_data],
+                slurs=_slurs(options.get("slurs")),
                 repeat_start=bool(options.get("repeat_start", False)),
                 repeat_end=bool(options.get("repeat_end", False)),
                 repeat_both=bool(options.get("repeat_both", False)),
