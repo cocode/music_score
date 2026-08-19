@@ -6,7 +6,7 @@
     {
       "number": "1.",
       "no_label": true,
-      "key": "C",
+      "key": "D",
       "time": "3/8",
       "bars": [
         {"notes": ["A4:8"]},
@@ -18,22 +18,24 @@
       ]
     },
     {
-      "key": "C",
+      "key": "D",
+      "time": "6/8",
+      "show_time": false,
+      "bars": [
+        {"notes": ["A4:16", "B4:16", "C5:16", "D5:16", "E5:16", "F5:16"]},
+        {"notes": ["E5:16", "D5:16", "C5:16", "B4:16", "A4:16", "G#4:16"]}
+      ]
+    },
+    {
+      "key": "D",
       "time": "6/8",
       "show_time": false,
       "bars": [
       ]
     },
     {
-      "key": "C",
-      "time": "6/8",
-      "show_time": false,
-      "bars": [
-      ]
-    },
-    {
-      "key": "C",
-      "time": "6/8",
+      "key": "D",
+      "time": "3/8",
       "show_time": false,
       "bars": [
       ]
