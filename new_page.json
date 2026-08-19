@@ -1,0 +1,17 @@
+{
+  "title": "Transcription of supplied excerpt",
+  "subtitle": "Approximate reading of the attached historical image",
+  "systems": [
+    {
+      "key": "C",
+      "time": "6/8",
+      "bars": [
+        {"notes": ["C5:8"]},
+        {"notes": ["E5:4", "C5:8", "C5:16", "B4:16", "C5:8"]},
+        {"notes": ["E5:4", "C5:8", "C5:16", "B4:16", "C5:8"]},
+        {"notes": ["D5:16", "E5:16", "D5:16", "G5:4", "G5:8"]},
+        {"notes": ["E5:4.", "B4:8", "C5:8"], "final": true}
+      ]
+    }
+  ]
+}
