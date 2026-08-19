@@ -1,0 +1,70 @@
+{
+  "title": "Tunes adapted to the German Waltz.",
+  "footer": "Engraved for Wilson's Treatise on German & French Waltzing.",
+  "system_gap": 68,
+  "systems": [
+    {
+      "number": "1.",
+      "no_label": true,
+      "key": "C",
+      "time": "3/8",
+      "bars": [
+        {"notes": ["A4:8"]},
+        {"notes": ["D5:8", "D5:8", "D5:8"]},
+        {"notes": ["A5:4", "F5:8"]},
+        {"notes": ["G5:8", "E5:8", "E5:8"]},
+        {"notes": ["F5:8", "D5:8", "D5:8"]},
+        {"notes": ["E5:16", "D5:16", "C5:16", "B4:16", "A4:16", "G4:16"]}
+      ]
+    },
+    {
+      "key": "C",
+      "time": "6/8",
+      "show_time": false,
+      "bars": [
+      ]
+    },
+    {
+      "key": "C",
+      "time": "6/8",
+      "show_time": false,
+      "bars": [
+      ]
+    },
+    {
+      "key": "C",
+      "time": "6/8",
+      "show_time": false,
+      "bars": [
+      ]
+    },
+    {
+      "number": "2.",
+      "key": "G",
+      "time": "6/8",
+      "bars": [
+      ]
+    },
+    {
+      "key": "G",
+      "time": "6/8",
+      "show_time": false,
+      "bars": [
+      ]
+    },
+    {
+      "key": "G",
+      "time": "6/8",
+      "show_time": false,
+      "bars": [
+      ]
+    },
+    {
+      "key": "G",
+      "time": "6/8",
+      "show_time": false,
+      "bars": [
+      ]
+    }
+  ]
+}
