@@ -35,7 +35,7 @@
       "bars": [
         {"notes": ["A4:8", "D5:8", "F5:8"]},
         {"notes": ["A5:8", "G5:8", "E5:8"]},
-        {"notes": ["D5:4"], "repeat_end": true},
+        {"notes": ["D5:4"], "repeat":"end"},
         {"notes": ["A5:8"]},
         {"notes": ["A5:16", "F5:16", "D5:8", "A5:8"]},
         {"notes": ["E5:4", "A4:8"]},
@@ -68,7 +68,7 @@
         {"notes": ["B5:4", "G5:16", "E5:16"]},
         {"notes": ["C5:8", "C5:16", "D5:16", "E5:16", "C5:16"]},
         {"notes": ["D5:4"], "fermata": true, "rehearsal": "Fine."},
-        {"notes": ["F5:8", "F5:8", "F5:8"], "repeat_start": true},
+        {"notes": ["F5:8", "F5:8", "F5:8"], "repeat":"start"},
         {"notes": ["B4:8", "B4:8", "B4:8"]},
         {"notes": ["C5:8", "B4:8", "C5:8"]}
       ]
@@ -83,7 +83,7 @@
         {"notes": ["B4:4", "D5:8"]},
         {"notes": ["C5:8", "F5:8", "A#4:8"]},
         {"notes": ["B4:4"], 
-		  "repeat_end": true, "rehearsal": "Da Capo."}
+		  "repeat": "end", "rehearsal": "Da Capo."}
       ]
     },
     {
@@ -92,7 +92,7 @@
       "time": "3/8",
       "bars": [
         {"notes": ["A5:16", "G5:16"]},
-        {"notes": ["F5:8.", "G5:16", "E5:16", "F5:16"], "repeat_start": true, "repeat_dots": 4, "segno_start": true},
+        {"notes": ["F5:8.", "G5:16", "E5:16", "F5:16"], "repeat":"start", "repeat_dots": 4, "segno_start": true},
         {"notes": ["D5:8", {"pitch": "A4", "duration": 8, "beam_break_after": true}, "D5:16", "F5:16"]},
         {"notes": ["E5:8", {"pitch": "A4", "duration": 8, "beam_break_after": true}, "E5:16", "G5:16"]},
         {"notes": ["F5:16", "E5:16", "D5:16", "C5:16", "D5:16", "E5:16"]}
@@ -106,7 +106,7 @@
         {"notes": ["F5:8.", "G5:16", "E5:16", "F5:16"]},
         {"notes": ["D5:8",  {"pitch": "A4", "duration": 8, "beam_break_after": true}, "D5:16", "F5:16"]},
         {"notes": ["E5:16", "A5:16", "G#5:16", "A5:16", "G♮5:16", "E5:16"]},
-        {"notes": ["D5:4"], "repeat_both": true}
+        {"notes": ["D5:4"], "repeat":"both"}
       ]
     },
     {
@@ -129,7 +129,7 @@
         {"notes": ["G5:16", "F5:16", "G5:16", "A5:16", "B5:16", "G5:16"]},
         {"notes": ["F5:16", "E5:16", "F5:16", "G5:16", "A5:16", "G5:16"]},
         {"notes": ["E5:16", "A5:16", "G#5:16", "A5:16", "G♮5:16", "E5:16"]},
-        {"notes": ["D5:16", "A4:16", "B4:16", "C5:16", "D5:16", "E5:16"], "repeat_end": true, "repeat_dots": 4, "segno": true, "rehearsal": "Dal Segno."}
+        {"notes": ["D5:16", "A4:16", "B4:16", "C5:16", "D5:16", "E5:16"], "repeat":"end", "repeat_dots": 4, "segno": true, "rehearsal": "Dal Segno."}
       ]
     }
   ]
