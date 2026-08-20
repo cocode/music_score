@@ -1,0 +1,81 @@
+{
+  "title": "Tunes adapted to the Jette or quick Sauteuse Waltz.",
+  "footer": "Engraved for Wilson's Treatise on German & French Waltzing.",
+  "system_gap": 68,
+  "systems": [
+    {
+      "number": "1.",
+      "no_label": true,
+      "key": "C",
+      "time": "6/8",
+      "bars": [
+        {"notes": ["A4:8"]},
+      ]
+    },
+    {
+      "key": "C",
+      "time": "6/8",
+      "show_time": false,
+      "bars": [
+      ]
+    },
+    {
+      "key": "C",
+      "time": "6/8",
+      "show_time": false,
+      "bars": [
+      ]
+    },
+    {
+      "key": "C",
+      "time": "6/8",
+      "show_time": false,
+      "bars": [
+      ]
+    },
+    {
+      "key": "C",
+      "time": "6/8",
+      "show_time": false,
+      "bars": [
+        {"notes": ["D5:4|"], "final": true }
+      ]
+    },
+    {
+      "number": "2.",
+      "key": "D",
+      "time": "6/8",
+      "bars": [
+        {"notes": ["D5:16", "C5:16"] },
+      ]
+    },
+    {
+      "key": "D",
+      "time": "6/8",
+      "show_time": false,
+      "bars": [
+      ]
+    },
+    {
+      "key": "D",
+      "time": "6/8",
+      "show_time": false,
+      "bars": [
+      ]
+    },
+    {
+      "key": "D",
+      "time": "6/8",
+      "show_time": false,
+      "bars": [
+      ]
+    },
+    {
+      "key": "D",
+      "time": "6/8",
+      "show_time": false,
+      "bars": [
+      ]
+    }
+  ]
+}
