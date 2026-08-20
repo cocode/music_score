@@ -331,9 +331,23 @@ class Score:
 
         content_left = time_x + 26 if draw_time else time_x
         content_right = right - 3
-        bar_widths = [self._bar_width(bar) for bar in system.bars]
-        scale = max(0.65, (content_right - content_left) / max(1, sum(bar_widths)))
-        widths = [natural_width * scale for natural_width in bar_widths]
+        minimum_widths = [self._bar_minimum_width(bar) for bar in system.bars]
+        available_width = content_right - content_left
+        minimum_total = sum(minimum_widths)
+        if minimum_total > 0:
+            # First preserve every measure's required footprint. Then give it
+            # the same proportion of the remaining line that it contributed
+            # to the minimum. If the line is genuinely too narrow, retain the
+            # minimum widths rather than allowing symbols to overlap.
+            leftover = max(0.0, available_width - minimum_total)
+            widths = [
+                minimum + leftover * minimum / minimum_total
+                for minimum in minimum_widths
+            ]
+        elif system.bars:
+            widths = [available_width / len(system.bars)] * len(system.bars)
+        else:
+            widths = []
         staff_end = content_left + sum(widths)
         if system.bars and system.bars[-1].repeat in {"start", "end", "both"}:
             # The outer stroke of a repeat-end sign is three units inside the
@@ -354,85 +368,60 @@ class Score:
         count = {"C": 0, "G": 1, "D": 2, "A": 3, "E": 4, "B": 5, "F#": 6}.get(key, 1 if key.endswith("#") else 0)
         return tuple("#" for _ in range(count))
 
-    def _bar_width(self, bar: Bar) -> float:
-        # Width is intentionally generous, like a nineteenth-century plate:
-        # short notes get grouped into visible beams instead of being cramped.
-        note_widths = sum(
-            {1: 30, 2: 25, 4: 19, 8: 15, 16: 12}[note.duration]
-            * (2.0 - 2.0 ** (-note.dots))
-            for note in bar.notes
+    def _bar_minimum_width(self, bar: Bar) -> float:
+        """Return the exact horizontal footprint required by a measure."""
+        left_symbol_space, right_symbol_space = self._bar_symbol_space(bar)
+        note_space = sum(
+            left_extent + right_extent
+            for left_extent, right_extent in (
+                self._note_horizontal_extents(note) for note in bar.notes
+            )
         )
-        accidental_space = sum(
-            self.style.accidental_spacing
-            for note in bar.notes
-            if note.display_accidental
-        )
-        # Add accidental room after applying the minimum so a short measure
-        # cannot absorb or discard the requested allowance.
-        return max(68.0, 24.0 + note_widths) + accidental_space
+        return left_symbol_space + note_space + right_symbol_space
+
+    def _bar_symbol_space(self, bar: Bar) -> tuple[float, float]:
+        """Reserve only the space physically occupied by boundary symbols."""
+        left = 10.0 if bar.repeat == "start" else 0.0
+        right = 14.0 if bar.repeat in {"end", "both"} else 0.0
+        if bar.final:
+            right = max(right, 5.0)
+        return left, right
+
+    def _note_horizontal_extents(self, note: Note) -> tuple[float, float]:
+        """Return symbol extents to the left and right of a note's center."""
+        s = self.style
+        left = s.note_width / 2
+        right = s.note_width / 2
+        if note.display_accidental:
+            left = max(left, s.accidental_spacing)
+        if note.dots:
+            # Keep this synchronized with _draw_note: the first dot is four
+            # units beyond the notehead and subsequent dots are five apart.
+            last_dot_center = s.note_width / 2 + 4.0 + (note.dots - 1) * 5.0
+            right = max(right, last_dot_center + 1.45)
+        return left, right
 
     def _note_positions(
         self, bar: Bar, x: float, width: float
     ) -> list[tuple[Note, float]]:
-        """Lay out rhythmic onsets while reserving symbol and boundary space."""
-        s = self.style
+        """Lay out note footprints with equal clear space around each one."""
         if not bar.notes:
             return []
 
-        # Ordinary barlines need only a small inset. Repeat signs occupy more
-        # room inside the measure and therefore receive a larger safety area.
-        left_padding = 16.0 if bar.repeat in {"start", "both"} else 8.0
-        right_padding = 22.0 if bar.repeat in {"end", "both"} else 8.0
-        content_left = x + left_padding
-        content_right = x + width - right_padding
-        accidental_space = sum(
-            s.accidental_spacing for note in bar.notes if note.display_accidental
-        )
+        left_symbol_space, right_symbol_space = self._bar_symbol_space(bar)
+        content_left = x + left_symbol_space
+        content_right = x + width - right_symbol_space
+        extents = [self._note_horizontal_extents(note) for note in bar.notes]
+        required_width = sum(left + right for left, right in extents)
+        leftover = max(0.0, content_right - content_left - required_width)
+        gap = leftover / (len(bar.notes) + 1)
 
-        if len(bar.notes) == 1:
-            note = bar.notes[0]
-            note_x = (content_left + content_right) / 2
-            if note.display_accidental:
-                note_x = max(note_x, content_left + s.accidental_spacing)
-            return [(note, note_x)]
-
-        rhythmic_width = max(
-            1.0, content_right - content_left - accidental_space
-        )
-        last_onset = sum(note.rhythmic_units for note in bar.notes[:-1])
-
+        cursor = content_left + gap
         positions: list[tuple[Note, float]] = []
-        onset = 0.0
-        accidental_offset = 0.0
-        for note in bar.notes:
-            if note.display_accidental:
-                accidental_offset += s.accidental_spacing
-            note_x = (
-                content_left
-                + accidental_offset
-                + rhythmic_width * onset / last_onset
-            )
+        for note, (left_extent, right_extent) in zip(bar.notes, extents):
+            note_x = cursor + left_extent
             positions.append((note, note_x))
-            onset += note.rhythmic_units
-
-        # Sparse measures can receive a large share of the system width. Do
-        # not stretch one beam across that entire allocation; retain the
-        # extra room after the compact beam group instead.
-        for index in range(1, len(positions)):
-            previous_note, previous_x = positions[index - 1]
-            note, note_x = positions[index]
-            shares_beam = (
-                previous_note.duration in (8, 16)
-                and note.duration in (8, 16)
-                and not previous_note.rest
-                and not note.rest
-                and not previous_note.beam_break_after
-            )
-            if shares_beam and note_x - previous_x > s.maximum_beamed_note_gap:
-                shift = note_x - previous_x - s.maximum_beamed_note_gap
-                for shifted_index in range(index, len(positions)):
-                    shifted_note, shifted_x = positions[shifted_index]
-                    positions[shifted_index] = (shifted_note, shifted_x - shift)
+            cursor = note_x + right_extent + gap
         return positions
 
     def _draw_bar(self, svg: SVG, bar: Bar, x: float, width: float, staff_top: float,
@@ -767,15 +756,45 @@ class Score:
         A beam is shared by a group, so its stems must all point toward the
         same side.  The average staff position is a compact approximation of
         the conventional engraving rule: notes mostly below the middle line
-        stem up, notes mostly above it stem down.
+        stem up, notes mostly above it stem down.  For a group with a very
+        wide vertical span, historical engraving sometimes puts the beam
+        between the notes: notes below the beam stem up and notes above it
+        stem down.
         """
         directions: dict[float, bool] = {}
         for group in self._beam_groups(positions):
             if len(group) >= 2:
-                stem_up = sum(note.step for note, _ in group) / len(group) < 0.5
-                for _, note_x in group:
-                    directions[note_x] = stem_up
+                if self._uses_middle_beam(group):
+                    middle_step = (
+                        min(note.step for note, _ in group)
+                        + max(note.step for note, _ in group)
+                    ) / 2
+                    for note, note_x in group:
+                        # Smaller staff steps are physically lower on the
+                        # page, so their stems point up toward the beam.
+                        directions[note_x] = note.step < middle_step
+                else:
+                    stem_up = sum(note.step for note, _ in group) / len(group) < 0.5
+                    for _, note_x in group:
+                        directions[note_x] = stem_up
         return directions
+
+    @staticmethod
+    def _uses_middle_beam(group: Sequence[tuple[Note, float]]) -> bool:
+        """Return whether a group is wide enough for opposed stems.
+
+        This is deliberately conservative.  A beam through the middle is
+        useful for the source's octave-plus leaps, but would be distracting
+        for an ordinary melodic group that merely spans a few staff spaces.
+        Requiring every note to stay away from the midpoint also prevents the
+        beam from running through a middle notehead.
+        """
+        steps = [note.step for note, _ in group]
+        span = max(steps) - min(steps)
+        if span < 7:
+            return False
+        middle_step = (min(steps) + max(steps)) / 2
+        return all(abs(step - middle_step) >= 2 for step in steps)
 
     def _beam_ends(
         self,
@@ -787,13 +806,18 @@ class Score:
         ends: dict[float, float] = {}
         for group in self._beam_groups(positions):
             if len(group) >= 2:
-                stem_up = beam_directions[group[0][1]]
-                beam_y1, beam_y2 = self._beam_line(group, staff_top, stem_up)
-                first_x = self._stem_x(group[0], stem_up)
-                last_x = self._stem_x(group[-1], stem_up)
+                if self._uses_middle_beam(group):
+                    first_x, beam_y1, last_x, beam_y2 = self._middle_beam_geometry(
+                        group, staff_top, beam_directions
+                    )
+                else:
+                    stem_up = beam_directions[group[0][1]]
+                    beam_y1, beam_y2 = self._beam_line(group, staff_top, stem_up)
+                    first_x = self._stem_x(group[0], stem_up)
+                    last_x = self._stem_x(group[-1], stem_up)
                 for item in group:
                     note_x = item[1]
-                    stem_x = self._stem_x(item, stem_up)
+                    stem_x = self._stem_x(item, beam_directions[note_x])
                     ends[note_x] = self._line_y(
                         stem_x, first_x, beam_y1, last_x, beam_y2
                     )
@@ -895,7 +919,77 @@ class Score:
                     beam_directions: dict[float, bool]) -> None:
         for group in self._beam_groups(positions):
             if len(group) >= 2:
-                self._beam_group(svg, group, staff_top, beam_directions[group[0][1]])
+                if self._uses_middle_beam(group):
+                    self._middle_beam_group(svg, group, staff_top, beam_directions)
+                else:
+                    self._beam_group(svg, group, staff_top, beam_directions[group[0][1]])
+
+    def _middle_beam_geometry(
+        self,
+        group: Sequence[tuple[Note, float]],
+        staff_top: float,
+        beam_directions: dict[float, bool],
+    ) -> tuple[float, float, float, float]:
+        """Return a beam centered between the highest and lowest noteheads."""
+        steps = [note.step for note, _ in group]
+        middle_step = (min(steps) + max(steps)) / 2
+        beam_y = staff_top + 2 * self.style.staff_gap - middle_step * (self.style.staff_gap / 2)
+        first = group[0]
+        last = group[-1]
+        return (
+            self._stem_x(first, beam_directions[first[1]]),
+            beam_y,
+            self._stem_x(last, beam_directions[last[1]]),
+            beam_y,
+        )
+
+    def _middle_beam_group(
+        self,
+        svg: SVG,
+        group: Sequence[tuple[Note, float]],
+        staff_top: float,
+        beam_directions: dict[float, bool],
+    ) -> None:
+        """Draw a beam with stems converging on it from both sides."""
+        first_x, first_y, last_x, last_y = self._middle_beam_geometry(
+            group, staff_top, beam_directions
+        )
+        self._draw_centered_beam_segment(svg, first_x, first_y, last_x, last_y)
+
+        # A secondary beam is uncommon in this layout, but keep sixteenth
+        # groups legible by drawing a parallel stroke on the lower side.
+        secondary_shift = self.style.beam_thickness + 2.0
+        run: list[int] = []
+        for index in range(len(group) + 1):
+            if index < len(group) and group[index][0].duration == 16:
+                run.append(index)
+            elif run:
+                if len(run) >= 2:
+                    run_first_x = self._stem_x(
+                        group[run[0]], beam_directions[group[run[0]][1]]
+                    )
+                    run_last_x = self._stem_x(
+                        group[run[-1]], beam_directions[group[run[-1]][1]]
+                    )
+                    self._draw_centered_beam_segment(
+                        svg,
+                        run_first_x,
+                        first_y + secondary_shift,
+                        run_last_x,
+                        last_y + secondary_shift,
+                    )
+                run = []
+
+    def _draw_centered_beam_segment(
+        self, svg: SVG, x1: float, y1: float, x2: float, y2: float
+    ) -> None:
+        """Draw a beam whose centerline is shared by opposed stems."""
+        thickness = self.style.beam_thickness / 2
+        svg.path(
+            f"M {x1:g} {y1 - thickness:g} L {x2:g} {y2 - thickness:g} "
+            f"L {x2:g} {y2 + thickness:g} L {x1:g} {y1 + thickness:g} Z",
+            fill=self.style.ink,
+        )
 
     def _beam_group(self, svg: SVG, group: Sequence[tuple[Note, float]], staff_top: float,
                     stem_up: bool) -> None:
