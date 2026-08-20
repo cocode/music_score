@@ -53,6 +53,7 @@ class Note:
     beam_break_after: bool = False
     dots: int = 0
     staccato: bool = False
+    staccatissimo: bool = False
     accent: Optional[str] = None
 
     def __post_init__(self) -> None:
@@ -117,9 +118,7 @@ class Slur:
 @dataclass
 class Bar:
     notes: Sequence[Note]
-    repeat_start: bool = False
-    repeat_end: bool = False
-    repeat_both: bool = False
+    repeat: Optional[str] = None
     repeat_dots: int = 2
     segno: bool = False
     segno_start: bool = False
@@ -131,6 +130,8 @@ class Bar:
     def __post_init__(self) -> None:
         self.notes = tuple(self.notes)
         self.slurs = tuple(self.slurs)
+        if self.repeat not in (None, "start", "end", "both"):
+            raise ValueError("repeat must be 'start', 'end', or 'both'")
         for slur in self.slurs:
             if slur.end >= len(self.notes):
                 raise ValueError("slur note index is outside this bar")
@@ -334,7 +335,7 @@ class Score:
         scale = max(0.65, (content_right - content_left) / max(1, sum(bar_widths)))
         widths = [natural_width * scale for natural_width in bar_widths]
         staff_end = content_left + sum(widths)
-        if system.bars and (system.bars[-1].repeat_end or system.bars[-1].repeat_start or system.bars[-1].repeat_both):
+        if system.bars and system.bars[-1].repeat in {"start", "end", "both"}:
             # The outer stroke of a repeat-end sign is three units inside the
             # nominal bar boundary; staff lines stop at that stroke.
             staff_end -= 3
@@ -380,8 +381,8 @@ class Score:
 
         # Ordinary barlines need only a small inset. Repeat signs occupy more
         # room inside the measure and therefore receive a larger safety area.
-        left_padding = 16.0 if (bar.repeat_start or bar.repeat_both) else 8.0
-        right_padding = 22.0 if (bar.repeat_end or bar.repeat_both) else 8.0
+        left_padding = 16.0 if bar.repeat in {"start", "both"} else 8.0
+        right_padding = 22.0 if bar.repeat in {"end", "both"} else 8.0
         content_left = x + left_padding
         content_right = x + width - right_padding
         accidental_space = sum(
@@ -466,10 +467,10 @@ class Score:
             if bar.repeat_dots == 4
             else (1.5, 2.5)
         )
-        repeat_start_dot_x: Optional[float] = None
-        if bar.repeat_both:
-            # ``repeat_both`` belongs to this bar's ending boundary.  It is
-            # a combined :||: sign, so keep its placement consistent whether
+        repeat_dot_x: Optional[float] = None
+        if bar.repeat == "both":
+            # ``repeat: both`` belongs to this bar's ending boundary. It is a
+            # combined :||: sign, so keep its placement consistent whether
             # the bar is internal or the last bar in the system.
             repeat_x = boundary_x
             first_bar_x, second_bar_x = repeat_x - 8, repeat_x - 4
@@ -480,7 +481,7 @@ class Score:
                 dot_y = staff_top + offset * s.staff_gap
                 svg.ellipse(left_dot_x, dot_y, 1.7, 1.7, fill=ink)
                 svg.ellipse(right_dot_x, dot_y, 1.7, 1.7, fill=ink)
-        elif bar.repeat_start:
+        elif bar.repeat == "start":
             if bar.repeat_dots == 4:
                 # The historical four-dot form encloses the dot column
                 # between two strokes. At an internal boundary, the left
@@ -498,19 +499,19 @@ class Score:
                 # Reuse the shared measure boundary as the first stroke so a
                 # normal start repeat has two visible strokes, not three.
                 first_bar_x, second_bar_x, dot_x = x, x + 4, x + 8
-            repeat_start_dot_x = dot_x
+            repeat_dot_x = dot_x
             svg.line(first_bar_x, staff_top, first_bar_x, staff_bottom, stroke=ink, stroke_width=s.bar_width)
             svg.line(second_bar_x, staff_top, second_bar_x, staff_bottom, stroke=ink, stroke_width=2.2)
             for offset in repeat_dot_offsets:
                 dot_y = staff_top + offset * s.staff_gap
                 svg.ellipse(dot_x, dot_y, 1.7, 1.7, fill=ink)
-        if bar.repeat_end:
+        if bar.repeat == "end":
             svg.line(boundary_x - 7, staff_top, boundary_x - 7, staff_bottom, stroke=ink, stroke_width=s.bar_width)
             svg.line(boundary_x - 3, staff_top, boundary_x - 3, staff_bottom, stroke=ink, stroke_width=2.2)
             for offset in repeat_dot_offsets:
                 dot_y = staff_top + offset * s.staff_gap
                 svg.ellipse(boundary_x - 12, dot_y, 1.7, 1.7, fill=ink)
-        elif not (bar.repeat_both or (bar.repeat_start and is_last)):
+        elif not (bar.repeat == "both" or (bar.repeat == "start" and is_last)):
             if bar.final:
                 # A final barline is a close thin-plus-thick pair, rather
                 # than merely a heavier ordinary barline.
@@ -527,7 +528,7 @@ class Score:
         if bar.segno:
             self._draw_segno(svg, boundary_x - 7, staff_top - 17)
         if bar.segno_start:
-            segno_x = repeat_start_dot_x if repeat_start_dot_x is not None else x + 18
+            segno_x = repeat_dot_x if repeat_dot_x is not None else x + 18
             self._draw_segno(svg, segno_x, staff_top - 17)
         if bar.fermata:
             fermata_x = boundary_x
@@ -649,6 +650,21 @@ class Score:
                 y - s.staff_gap * 0.8,
             )
             svg.ellipse(x, staccato_y, 1.45, 1.45, fill=ink)
+        if note.staccatissimo:
+            # Historical stroke/wedge articulation, distinct from the round
+            # staccato dot. It stays above the staff, or above the note when
+            # the note is already above the staff.
+            mark_y = min(
+                staff_top - s.staff_gap * 0.8,
+                y - s.staff_gap * 0.8,
+            )
+            svg.path(
+                f"M {x - 2:g} {mark_y - 4:g} "
+                f"Q {x + 2:g} {mark_y - 4:g} {x + 1.5:g} {mark_y - 1:g} "
+                f"Q {x + 1:g} {mark_y + 2.5:g} {x - 0.5:g} {mark_y + 4:g} "
+                f"Q {x - 1.8:g} {mark_y + 1:g} {x - 2:g} {mark_y - 4:g} Z",
+                fill=ink,
+            )
         if note.accent:
             # This source uses a small open wedge below the staff for a
             # single-note accent. Keep it below the note if the note itself

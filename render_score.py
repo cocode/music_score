@@ -23,11 +23,12 @@ def _note(value: Any, key: str) -> Note:
         try:
             pitch, duration_token = value.rsplit(":", 1)
         except Exception as e:
-            print(F"ERROR! got '{e} for {value}")
+            print(F"ERROR! got '{e} for {value}. Are you missing a duration?")
             raise e
   
         beam_break_after = "|" in duration_token
         staccato = "!" in duration_token
+        staccatissimo = "'" in duration_token
         accent_symbols = [symbol for symbol in (">", "<") if symbol in duration_token]
         if len(accent_symbols) > 1:
             raise ValueError("a note can have only one accent symbol")
@@ -35,6 +36,7 @@ def _note(value: Any, key: str) -> Note:
         duration_token = (
             duration_token.replace("|", "")
             .replace("!", "")
+            .replace("'", "")
             .replace(">", "")
             .replace("<", "")
         )
@@ -46,6 +48,7 @@ def _note(value: Any, key: str) -> Note:
             "dots": dots,
             "beam_break_after": beam_break_after,
             "staccato": staccato,
+            "staccatissimo": staccatissimo,
             "accent": accent,
         }
     elif isinstance(value, dict):
@@ -71,6 +74,7 @@ def _note(value: Any, key: str) -> Note:
         beam_break_after=bool(data.get("beam_break_after", False)),
         dots=int(data.get("dots", 0)),
         staccato=bool(data.get("staccato", False)),
+        staccatissimo=bool(data.get("staccatissimo", False)),
         accent=accent,
     )
 
@@ -120,9 +124,7 @@ def score_from_dict(data: dict[str, Any]) -> Score:
             bars.append(Bar(
                 [_note(value, key) for value in note_data],
                 slurs=_slurs(options.get("slurs")),
-                repeat_start=bool(options.get("repeat_start", False)),
-                repeat_end=bool(options.get("repeat_end", False)),
-                repeat_both=bool(options.get("repeat_both", False)),
+                repeat=options.get("repeat"),
                 repeat_dots=int(options.get("repeat_dots", 2)),
                 segno=bool(options.get("segno", False)),
                 segno_start=bool(options.get("segno_start", False)),
