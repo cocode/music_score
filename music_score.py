@@ -173,7 +173,7 @@ class Style:
     maximum_beamed_note_gap: float = 40.0
     minimum_intermediate_stem_ratio: float = 0.5
     bar_width: float = 1.2
-    page_width: float = 780.0
+    page_width: float = 585.0
     margin_x: float = 54.0
     slur_clearance: float = 2.0
 
@@ -262,8 +262,41 @@ class Score:
         if self.subtitle:
             top += 23.0
         system_height = 53.0
+        rendered_system_gap = self.system_gap * 0.576
+        gap_shift = 2.0
+        song_start_count = sum(
+            1 for next_system in self.systems[1:] if next_system.number
+        )
+        ordinary_gap_count = sum(
+            1 for next_system in self.systems[1:] if not next_system.number
+        )
+        ordinary_system_gap = (
+            rendered_system_gap - gap_shift
+            if song_start_count
+            else rendered_system_gap
+        )
+        song_gap_bonus = (
+            gap_shift * ordinary_gap_count / song_start_count
+            if song_start_count
+            else 0.0
+        )
+        new_song_gap = 50.0 + song_gap_bonus
+        inter_system_gaps = [
+            # The marker belongs to the first system of the new song, so the
+            # larger gap is inserted immediately before that system. The
+            # ordinary gaps give up the same total amount, keeping page height
+            # unchanged.
+            new_song_gap if next_system.number else ordinary_system_gap
+            for next_system in self.systems[1:]
+        ]
         footer_height = 37.0 if self.footer else 0.0
-        height = top + max(1, len(self.systems)) * (system_height + self.system_gap) - self.system_gap + footer_height + 20
+        height = (
+            top
+            + max(1, len(self.systems)) * system_height
+            + sum(inter_system_gaps)
+            + footer_height
+            + 20
+        )
         svg = SVG(self.style.page_width, height)
         ink, paper = self.style.ink, self.style.paper
         embedded_font = _embedded_music_font()
@@ -279,9 +312,10 @@ class Score:
                      font_family="Georgia, Times New Roman, serif", font_size=12, font_style="italic")
 
         y = top
-        for system in self.systems:
+        for index, system in enumerate(self.systems):
             self._draw_system(svg, system, y)
-            y += system_height + self.system_gap
+            if index < len(inter_system_gaps):
+                y += system_height + inter_system_gaps[index]
         if self.footer:
             svg.text(self.style.page_width / 2, height - 13, self.footer, text_anchor="middle", fill=ink,
                      font_family="Georgia, Times New Roman, serif", font_size=12, font_weight="bold",
