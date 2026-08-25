@@ -126,10 +126,13 @@ class Bar:
     final: bool = False
     rehearsal: Optional[str] = None
     slurs: Sequence[Slur] = field(default_factory=tuple)
+    barline: str = "single"
 
     def __post_init__(self) -> None:
         self.notes = tuple(self.notes)
         self.slurs = tuple(self.slurs)
+        if self.barline not in ("single", "double"):
+            raise ValueError("barline must be 'single' or 'double'")
         if self.repeat not in (None, "start", "end", "both"):
             raise ValueError("repeat must be 'start', 'end', or 'both'")
         for slur in self.slurs:
@@ -418,7 +421,7 @@ class Score:
         """Reserve only the space physically occupied by boundary symbols."""
         left = 10.0 if bar.repeat == "start" else 0.0
         right = 14.0 if bar.repeat in {"end", "both"} else 0.0
-        if bar.final:
+        if bar.final or bar.barline == "double":
             right = max(right, 5.0)
         return left, right
 
@@ -536,9 +539,9 @@ class Score:
                 dot_y = staff_top + offset * s.staff_gap
                 svg.ellipse(boundary_x - 12, dot_y, 1.7, 1.7, fill=ink)
         elif not (bar.repeat == "both" or (bar.repeat == "start" and is_last)):
-            if bar.final:
-                # A final barline is a close thin-plus-thick pair, rather
-                # than merely a heavier ordinary barline.
+            if bar.final or bar.barline == "double":
+                # Both final and double barlines use a close thin-plus-thick
+                # pair; ``barline`` also permits that mark mid-score.
                 svg.line(boundary_x - 4, staff_top, boundary_x - 4, staff_bottom,
                          stroke=ink, stroke_width=s.bar_width)
                 svg.line(boundary_x, staff_top, boundary_x, staff_bottom,
