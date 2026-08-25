@@ -604,23 +604,43 @@ class Score:
             midpoint_x = (start_x + end_x) / 2
             arch = max(10.0, min(24.0, (end_x - start_x) * 0.18))
             if slur.placement == "above":
-                endpoint_y = staff_top - 2.5
-                for note, note_x in positions[slur.start:slur.end + 1]:
+                endpoint_ys: list[float] = []
+                for note, note_x in (
+                    positions[slur.start], positions[slur.end]
+                ):
                     if note.rest:
+                        endpoint_ys.append(staff_top - 2.5)
                         continue
                     note_y = self._note_y(note, staff_top)
-                    endpoint_y = min(
-                        endpoint_y,
-                        note_y - self._note_height(note) / 2 - s.slur_clearance,
-                    )
                     stem_up = beam_directions.get(note_x, note.small or note.step < 0.5)
+                    endpoint_y = note_y - self._note_height(note) / 2 - s.slur_clearance
                     if stem_up:
                         stem_end = beam_ends.get(
                             note_x,
                             self._default_stem_end(note_y, stem_up, self._note_scale(note)),
                         )
                         endpoint_y = min(endpoint_y, stem_end - s.slur_clearance)
-                control_y = endpoint_y - arch
+                    # Leave a visible gap between the note and the arc so a
+                    # staff line does not make them appear connected.
+                    endpoint_y -= self._note_height(note) / 2
+                    endpoint_ys.append(endpoint_y)
+                start_y, end_y = endpoint_ys
+                control_y = min(start_y, end_y) - arch
+                # Keep the slur above interior noteheads and upward stems while
+                # preserving the slope established by its two endpoints.
+                for note, note_x in positions[slur.start:slur.end + 1]:
+                    if note.rest:
+                        continue
+                    note_y = self._note_y(note, staff_top)
+                    obstacle_y = note_y - self._note_height(note) / 2 - s.slur_clearance
+                    stem_up = beam_directions.get(note_x, note.small or note.step < 0.5)
+                    if stem_up:
+                        stem_end = beam_ends.get(
+                            note_x,
+                            self._default_stem_end(note_y, stem_up, self._note_scale(note)),
+                        )
+                        obstacle_y = min(obstacle_y, stem_end - s.slur_clearance)
+                    control_y = min(control_y, obstacle_y - arch)
             else:
                 endpoint_y = staff_bottom + 2.5
                 for note, note_x in positions[slur.start:slur.end + 1]:
@@ -639,10 +659,16 @@ class Score:
                         )
                         endpoint_y = max(endpoint_y, stem_end + s.slur_clearance)
                 control_y = endpoint_y + arch
-            svg.path(
-                f"M {start_x:g} {endpoint_y:g} Q {midpoint_x:g} {control_y:g} {end_x:g} {endpoint_y:g}",
-                fill="none", stroke=ink, stroke_width=1.5, stroke_linecap="round",
-            )
+            if slur.placement == "above":
+                svg.path(
+                    f"M {start_x:g} {start_y:g} Q {midpoint_x:g} {control_y:g} {end_x:g} {end_y:g}",
+                    fill="none", stroke=ink, stroke_width=1.5, stroke_linecap="round",
+                )
+            else:
+                svg.path(
+                    f"M {start_x:g} {endpoint_y:g} Q {midpoint_x:g} {control_y:g} {end_x:g} {endpoint_y:g}",
+                    fill="none", stroke=ink, stroke_width=1.5, stroke_linecap="round",
+                )
 
     def _draw_note(self, svg: SVG, note: Note, x: float, staff_top: float,
                    stem_up: Optional[bool] = None,
