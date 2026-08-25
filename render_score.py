@@ -29,6 +29,7 @@ def _note(value: Any, key: str) -> Note:
         beam_break_after = "|" in duration_token
         staccato = "!" in duration_token
         staccatissimo = "'" in duration_token
+        small = "^" in duration_token
         accent_symbols = [symbol for symbol in (">", "<") if symbol in duration_token]
         if len(accent_symbols) > 1:
             raise ValueError("a note can have only one accent symbol")
@@ -39,6 +40,7 @@ def _note(value: Any, key: str) -> Note:
             .replace("'", "")
             .replace(">", "")
             .replace("<", "")
+            .replace("^", "")
         )
         duration_text = duration_token.rstrip(".")
         dots = len(duration_token) - len(duration_text)
@@ -50,6 +52,7 @@ def _note(value: Any, key: str) -> Note:
             "staccato": staccato,
             "staccatissimo": staccatissimo,
             "accent": accent,
+            "small": small,
         }
     elif isinstance(value, dict):
         data = dict(value)
@@ -76,6 +79,7 @@ def _note(value: Any, key: str) -> Note:
         staccato=bool(data.get("staccato", False)),
         staccatissimo=bool(data.get("staccatissimo", False)),
         accent=accent,
+        small=bool(data.get("small", False)),
     )
 
 
@@ -123,6 +127,7 @@ def score_from_dict(data: dict[str, Any]) -> Score:
                 options = bar_data
             bars.append(Bar(
                 [_note(value, key) for value in note_data],
+                barline=str(options.get("barline", "single")),
                 slurs=_slurs(options.get("slurs")),
                 repeat=options.get("repeat"),
                 repeat_dots=int(options.get("repeat_dots", 2)),
@@ -190,6 +195,7 @@ def _print_notes(scores: Sequence[Score]) -> None:
                 bars.append(" ".join(
                     f"{note.pitch}/{note.duration}{'.' * note.dots}"
                     f"{'|' if note.beam_break_after else ''}"
+                    f"{'^' if note.small else ''}"
                     for note in bar.notes
                 ))
             print(f"  line {line_number}: " + " | ".join(bars))

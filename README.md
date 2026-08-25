@@ -85,9 +85,11 @@ also set `staccato: true` for the long form. Downward-stem staccato dots are
 placed above the staff, or above the note when the note is already above the
 staff. Accents are drawn below the staff to match the historical source; `<`
 is accepted as the mirrored accent glyph. A bar can also
-carry `final`, `repeat`, `segno`, `slurs`,
-and `rehearsal` fields. `final` draws a thin-plus-thick ending barline. For a
-visible local accidental or a rest, use an object such as
+carry `barline`, `final`, `repeat`, `segno`, `slurs`,
+and `rehearsal` fields. `barline` defaults to `"single"`; use
+`"barline": "double"` for a thin-plus-thick double barline, including one
+inside a score. `final` remains supported for a thin-plus-thick ending barline.
+For a visible local accidental or a rest, use an object such as
 `{"pitch": "F4", "duration": 8, "accidental": "♮"}` or
 `{"duration": 4, "rest": true}`.
 
@@ -109,7 +111,9 @@ inclusive. This places a slur over the first three notes:
 The object form `{"start": 0, "end": 2, "placement": "above"}` remains
 supported. Compact note modifiers can be combined, for example
 `"A4:8.!'>|"` means dotted, staccato, staccatissimo, accented, and a beam
-break after the note.
+break after the note. Append `^` to draw a note at half size while preserving
+its duration, as in `"F5:16^"`. The equivalent long form uses
+`"small": true`. Small notes use upward stems.
 
 The current renderer supports slurs within one bar. Cross-bar slurs can be
 added later with the same span idea using bar-and-note references. Slurs
@@ -162,7 +166,7 @@ score.write_svg("my-score.svg")
 
 Supported durations are whole, half, quarter, eighth, and sixteenth notes.
 Use `Note("F#4", 8)` or `Note("B♭4", 4)` for accidentals, and
-`Note(duration=4, rest=True)` for a rest. `Bar` supports `repeat`, `final`,
+`Note(duration=4, rest=True)` for a rest. `Bar` supports `barline`, `repeat`, `final`,
 and a small text annotation through `rehearsal`.
 
 The renderer uses the Unicode treble-clef and accidental symbols with common

@@ -55,6 +55,7 @@ class Note:
     staccato: bool = False
     staccatissimo: bool = False
     accent: Optional[str] = None
+    small: bool = False
 
     def __post_init__(self) -> None:
         if self.duration not in (1, 2, 4, 8, 16):
@@ -428,16 +429,28 @@ class Score:
     def _note_horizontal_extents(self, note: Note) -> tuple[float, float]:
         """Return symbol extents to the left and right of a note's center."""
         s = self.style
-        left = s.note_width / 2
-        right = s.note_width / 2
+        scale = self._note_scale(note)
+        note_width = s.note_width * scale
+        left = note_width / 2
+        right = note_width / 2
         if note.display_accidental:
-            left = max(left, s.accidental_spacing)
+            left = max(left, s.accidental_spacing * scale)
         if note.dots:
             # Keep this synchronized with _draw_note: the first dot is four
             # units beyond the notehead and subsequent dots are five apart.
-            last_dot_center = s.note_width / 2 + 4.0 + (note.dots - 1) * 5.0
-            right = max(right, last_dot_center + 1.45)
+            last_dot_center = note_width / 2 + 4.0 * scale + (note.dots - 1) * 5.0 * scale
+            right = max(right, last_dot_center + 1.45 * scale)
         return left, right
+
+    @staticmethod
+    def _note_scale(note: Note) -> float:
+        return (2.0 / 3.0) if note.small else 1.0
+
+    def _note_width(self, note: Note) -> float:
+        return self.style.note_width * self._note_scale(note)
+
+    def _note_height(self, note: Note) -> float:
+        return self.style.note_height * self._note_scale(note)
 
     def _note_positions(
         self, bar: Bar, x: float, width: float
@@ -597,13 +610,13 @@ class Score:
                     note_y = self._note_y(note, staff_top)
                     endpoint_y = min(
                         endpoint_y,
-                        note_y - s.note_height / 2 - s.slur_clearance,
+                        note_y - self._note_height(note) / 2 - s.slur_clearance,
                     )
-                    stem_up = beam_directions.get(note_x, note.step < 0.5)
+                    stem_up = beam_directions.get(note_x, note.small or note.step < 0.5)
                     if stem_up:
                         stem_end = beam_ends.get(
                             note_x,
-                            self._default_stem_end(note_y, stem_up),
+                            self._default_stem_end(note_y, stem_up, self._note_scale(note)),
                         )
                         endpoint_y = min(endpoint_y, stem_end - s.slur_clearance)
                 control_y = endpoint_y - arch
@@ -615,13 +628,13 @@ class Score:
                     note_y = self._note_y(note, staff_top)
                     endpoint_y = max(
                         endpoint_y,
-                        note_y + s.note_height / 2 + s.slur_clearance,
+                        note_y + self._note_height(note) / 2 + s.slur_clearance,
                     )
-                    stem_up = beam_directions.get(note_x, note.step < 0.5)
+                    stem_up = beam_directions.get(note_x, note.small or note.step < 0.5)
                     if not stem_up:
                         stem_end = beam_ends.get(
                             note_x,
-                            self._default_stem_end(note_y, stem_up),
+                            self._default_stem_end(note_y, stem_up, self._note_scale(note)),
                         )
                         endpoint_y = max(endpoint_y, stem_end + s.slur_clearance)
                 control_y = endpoint_y + arch
@@ -646,26 +659,32 @@ class Score:
             return
 
         y = self._note_y(note, staff_top)
-        if stem_up is None:
+        scale = self._note_scale(note)
+        note_width = self._note_width(note)
+        note_height = self._note_height(note)
+        if note.small:
+            stem_up = True
+        elif stem_up is None:
             stem_up = note.step < 0.5
-        self._ledger_lines(svg, x, y, staff_top)
+        self._ledger_lines(svg, x, y, staff_top, note)
         accidental = note.display_accidental
         if accidental:
             symbol = "♯" if accidental == "#" else "♭" if accidental == "b" else "♮"
-            svg.text(x - s.accidental_offset_x, y + 8, symbol, fill=ink,
+            svg.text(x - s.accidental_offset_x * scale, y + 8 * scale, symbol, fill=ink,
                      font_family="DejaVu Sans, Georgia, serif",
-                     font_size=s.accidental_font_size, text_anchor="middle")
+                     font_size=s.accidental_font_size * scale, text_anchor="middle")
 
         filled = note.duration not in (1, 2)
-        svg.ellipse(x, y, s.note_width / 2, s.note_height / 2,
-                    fill=ink if filled else "none", stroke=ink, stroke_width=1.1)
+        svg.ellipse(x, y, note_width / 2, note_height / 2,
+                    fill=ink if filled else "none", stroke=ink, stroke_width=1.1 * scale)
         if note.dots:
             # A dot following a line note is conventionally moved into the
             # space above so it cannot disappear into the staff line.
             dot_y = y - s.staff_gap / 2 if note.step % 2 == 0 else y
-            first_dot_x = x + s.note_width / 2 + 4.0
+            first_dot_x = x + note_width / 2 + 4.0 * scale
             for dot_index in range(note.dots):
-                svg.ellipse(first_dot_x + dot_index * 5.0, dot_y, 1.45, 1.45,
+                svg.ellipse(first_dot_x + dot_index * 5.0 * scale, dot_y,
+                            1.45 * scale, 1.45 * scale,
                             fill=ink)
         if note.staccato:
             # This source places staccato dots above the staff. If the note
@@ -676,7 +695,7 @@ class Score:
                 staff_top - s.staff_gap * 0.8,
                 y - s.staff_gap * 0.8,
             )
-            svg.ellipse(x, staccato_y, 1.45, 1.45, fill=ink)
+            svg.ellipse(x, staccato_y, 1.45 * scale, 1.45 * scale, fill=ink)
         if note.staccatissimo:
             # Historical stroke/wedge articulation, distinct from the round
             # staccato dot. It stays above the staff, or above the note when
@@ -686,10 +705,10 @@ class Score:
                 y - s.staff_gap * 0.8,
             )
             svg.path(
-                f"M {x - 2:g} {mark_y - 4:g} "
-                f"Q {x + 2:g} {mark_y - 4:g} {x + 1.5:g} {mark_y - 1:g} "
-                f"Q {x + 1:g} {mark_y + 2.5:g} {x - 0.5:g} {mark_y + 4:g} "
-                f"Q {x - 1.8:g} {mark_y + 1:g} {x - 2:g} {mark_y - 4:g} Z",
+                f"M {x - 2 * scale:g} {mark_y - 4 * scale:g} "
+                f"Q {x + 2 * scale:g} {mark_y - 4 * scale:g} {x + 1.5 * scale:g} {mark_y - 1 * scale:g} "
+                f"Q {x + 1 * scale:g} {mark_y + 2.5 * scale:g} {x - 0.5 * scale:g} {mark_y + 4 * scale:g} "
+                f"Q {x - 1.8 * scale:g} {mark_y + 1 * scale:g} {x - 2 * scale:g} {mark_y - 4 * scale:g} Z",
                 fill=ink,
             )
         if note.accent:
@@ -698,63 +717,68 @@ class Score:
             # extends below the staff.
             accent_y = max(
                 staff_bottom + 6.0,
-                y + s.note_height / 2 + 6.0,
+                y + note_height / 2 + 6.0,
             )
             side = 1.0 if note.accent == ">" else -1.0
             svg.path(
-                f"M {x - side * 4:g} {accent_y - 4:g} "
-                f"L {x + side * 4:g} {accent_y:g} "
-                f"L {x - side * 4:g} {accent_y + 4:g}",
-                fill="none", stroke=ink, stroke_width=1.4,
+                f"M {x - side * 4 * scale:g} {accent_y - 4 * scale:g} "
+                f"L {x + side * 4 * scale:g} {accent_y:g} "
+                f"L {x - side * 4 * scale:g} {accent_y + 4 * scale:g}",
+                fill="none", stroke=ink, stroke_width=1.4 * scale,
                 stroke_linecap="round", stroke_linejoin="round",
             )
         if note.duration != 1:
-            stem_x = x + s.note_width / 2 if stem_up else x - s.note_width / 2
+            stem_x = x + note_width / 2 if stem_up else x - note_width / 2
             stem_y = y
             is_beamed = stem_end is not None
             if stem_end is None:
-                stem_end = self._default_stem_end(y, stem_up)
-            svg.line(stem_x, stem_y, stem_x, stem_end, stroke=ink, stroke_width=s.stem,
+                stem_end = self._default_stem_end(y, stem_up, scale)
+            svg.line(stem_x, stem_y, stem_x, stem_end, stroke=ink, stroke_width=s.stem * scale,
                      stroke_linecap="butt" if is_beamed else "round")
             # A short note outside a beamed group still needs its flag. Notes
             # that received a beam endpoint are already connected by a beam.
             if note.duration in (8, 16) and not is_beamed:
-                self._draw_flags(svg, stem_x, stem_end, stem_up, note.duration)
+                self._draw_flags(svg, stem_x, stem_end, stem_up, note.duration, scale)
 
     def _draw_flags(self, svg: SVG, stem_x: float, stem_end: float,
-                    stem_up: bool, duration: int) -> None:
+                    stem_up: bool, duration: int, scale: float = 1.0) -> None:
         """Draw one eighth-note flag or two sixteenth-note flags."""
         ink = self.style.ink
         count = 1 if duration == 8 else 2
         for index in range(count):
-            offset = index * 5.0
+            offset = index * 5.0 * scale
             if stem_up:
                 y = stem_end + offset
                 svg.path(
-                    f"M {stem_x:g} {y:g} q 7 2 10 7 q -5 -2 -10 -2 Z",
+                    f"M {stem_x:g} {y:g} q {7 * scale:g} {2 * scale:g} "
+                    f"{10 * scale:g} {7 * scale:g} q {-5 * scale:g} {-2 * scale:g} "
+                    f"{-10 * scale:g} {-2 * scale:g} Z",
                     fill=ink,
                 )
             else:
                 y = stem_end - offset
                 svg.path(
-                    f"M {stem_x:g} {y:g} q 7 -2 10 -7 q -5 2 -10 2 Z",
+                    f"M {stem_x:g} {y:g} q {7 * scale:g} {-2 * scale:g} "
+                    f"{10 * scale:g} {-7 * scale:g} q {-5 * scale:g} {2 * scale:g} "
+                    f"{-10 * scale:g} {2 * scale:g} Z",
                     fill=ink,
                 )
 
     def _note_y(self, note: Note, staff_top: float) -> float:
         return staff_top + 2 * self.style.staff_gap - note.step * (self.style.staff_gap / 2)
 
-    def _default_stem_end(self, note_y: float, stem_up: bool) -> float:
+    def _default_stem_end(self, note_y: float, stem_up: bool, scale: float = 1.0) -> float:
         stem_start = note_y
-        stem_length = 3.5 * self.style.staff_gap
+        stem_length = 3.5 * self.style.staff_gap * scale
         return stem_start - stem_length if stem_up else stem_start + stem_length
 
-    def _ledger_lines(self, svg: SVG, x: float, y: float, staff_top: float) -> None:
+    def _ledger_lines(self, svg: SVG, x: float, y: float, staff_top: float, note: Note) -> None:
         s = self.style
         ink = s.ink
         staff_bottom = staff_top + 4 * s.staff_gap
-        ledger_left = s.note_width / 2 + 2.0
-        ledger_right = s.note_width / 2 + 2.0
+        note_width = self._note_width(note)
+        ledger_left = note_width / 2 + 2.0
+        ledger_right = note_width / 2 + 2.0
         if y < staff_top - 1:
             # Work outward from the staff and stop at the note. This draws a
             # ledger line through a note on a line, but never beyond it.
@@ -804,7 +828,12 @@ class Score:
         directions: dict[float, bool] = {}
         for group in self._beam_groups(positions):
             if len(group) >= 2:
-                if self._uses_middle_beam(group):
+                if any(note.small for note, _ in group):
+                    # Historical small notes in this score use upward stems.
+                    # A shared beam needs one direction for the whole group.
+                    for _, note_x in group:
+                        directions[note_x] = True
+                elif self._uses_middle_beam(group):
                     middle_step = (
                         min(note.step for note, _ in group)
                         + max(note.step for note, _ in group)
@@ -893,8 +922,10 @@ class Score:
         # an edge even when it clears the center of the ellipse.
         for note_index, (note, note_x) in enumerate(group):
             note_y = self._note_y(note, staff_top)
-            sample_left = max(first_x, note_x - s.note_width / 2)
-            sample_right = min(last_x, note_x + s.note_width / 2)
+            note_width = self._note_width(note)
+            note_height = self._note_height(note)
+            sample_left = max(first_x, note_x - note_width / 2)
+            sample_right = min(last_x, note_x + note_width / 2)
             if sample_left > sample_right:
                 continue
             sample_center = min(max(note_x, sample_left), sample_right)
@@ -911,11 +942,11 @@ class Score:
 
                 if stem_up:
                     beam_near_edge = beam_y + s.beam_thickness
-                    allowed_edge = note_y - s.note_height / 2 - s.beam_clearance
+                    allowed_edge = note_y - note_height / 2 - s.beam_clearance
                     deficit = beam_near_edge - allowed_edge
                 else:
                     beam_near_edge = beam_y - s.beam_thickness
-                    allowed_edge = note_y + s.note_height / 2 + s.beam_clearance
+                    allowed_edge = note_y + note_height / 2 + s.beam_clearance
                     deficit = allowed_edge - beam_near_edge
 
                 if deficit > 0:
@@ -1083,7 +1114,7 @@ class Score:
     def _stem_x(self, item: tuple[Note, float], stem_up: bool) -> float:
         """Return the x coordinate where this note's stem meets its beams."""
         x = item[1]
-        offset = self.style.note_width / 2
+        offset = self._note_width(item[0]) / 2
         return x + offset if stem_up else x - offset
 
     def _beam_geometry(
