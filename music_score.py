@@ -264,6 +264,7 @@ class Score:
         system_height = 53.0
         rendered_system_gap = self.system_gap * 0.576
         gap_shift = 2.0
+        additional_staff_gap_reduction = 1.0
         song_start_count = sum(
             1 for next_system in self.systems[1:] if next_system.number
         )
@@ -271,9 +272,9 @@ class Score:
             1 for next_system in self.systems[1:] if not next_system.number
         )
         ordinary_system_gap = (
-            rendered_system_gap - gap_shift
-            if song_start_count
-            else rendered_system_gap
+            rendered_system_gap
+            - (gap_shift if song_start_count else 0.0)
+            - additional_staff_gap_reduction
         )
         song_gap_bonus = (
             gap_shift * ordinary_gap_count / song_start_count
