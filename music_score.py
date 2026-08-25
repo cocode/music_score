@@ -753,18 +753,20 @@ class Score:
         s = self.style
         ink = s.ink
         staff_bottom = staff_top + 4 * s.staff_gap
+        ledger_left = s.note_width / 2 + 2.0
+        ledger_right = s.note_width / 2 + 2.0
         if y < staff_top - 1:
             # Work outward from the staff and stop at the note. This draws a
             # ledger line through a note on a line, but never beyond it.
             yy = staff_top - s.staff_gap
             while yy >= y:
-                svg.line(x - 8.75, yy, x + 8.75, yy,
+                svg.line(x - ledger_left, yy, x + ledger_right, yy,
                          stroke=ink, stroke_width=s.staff_width)
                 yy -= s.staff_gap
         elif y > staff_bottom + 1:
             yy = staff_bottom + s.staff_gap
             while yy <= y:
-                svg.line(x - 8.75, yy, x + 8.75, yy,
+                svg.line(x - ledger_left, yy, x + ledger_right, yy,
                          stroke=ink, stroke_width=s.staff_width)
                 yy += s.staff_gap
 
