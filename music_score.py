@@ -670,7 +670,12 @@ class Score:
         accidental = note.display_accidental
         if accidental:
             symbol = "♯" if accidental == "#" else "♭" if accidental == "b" else "♮"
-            svg.text(x - s.accidental_offset_x * scale, y + 8 * scale, symbol, fill=ink,
+            accidental_y = y + 8 * scale
+            if accidental == "b":
+                # The font's flat glyph sits low on the staff; raise its
+                # visible mark by half a staff space to align with the note.
+                accidental_y -= s.staff_gap / 2 * scale
+            svg.text(x - s.accidental_offset_x * scale, accidental_y, symbol, fill=ink,
                      font_family="DejaVu Sans, Georgia, serif",
                      font_size=s.accidental_font_size * scale, text_anchor="middle")
 
