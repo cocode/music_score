@@ -388,10 +388,11 @@ class Score:
         else:
             widths = []
         staff_end = content_left + sum(widths)
-        if system.bars and system.bars[-1].repeat in {"start", "end", "both"}:
-            # The outer stroke of a repeat-end sign is three units inside the
-            # nominal bar boundary; staff lines stop at that stroke.
-            staff_end -= 3
+        if system.bars and system.bars[-1].repeat in {"start", "both"}:
+            # Right-hand repeat dots at the edge of a staff need room beyond
+            # the nominal bar boundary, with the staff lines continuing past
+            # them as in the source engraving.
+            staff_end += 12
         for line_no in range(5):
             yy = staff_top + line_no * s.staff_gap
             svg.line(left, yy, staff_end, yy, stroke=ink, stroke_width=s.staff_width, stroke_linecap="round")
