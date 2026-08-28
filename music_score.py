@@ -411,10 +411,12 @@ class Score:
     def _bar_minimum_width(self, bar: Bar) -> float:
         """Return the exact horizontal footprint required by a measure."""
         left_symbol_space, right_symbol_space = self._bar_symbol_space(bar)
+        standalone_flags = self._standalone_flag_indices(bar)
         note_space = sum(
             left_extent + right_extent
             for left_extent, right_extent in (
-                self._note_horizontal_extents(note) for note in bar.notes
+                self._note_horizontal_extents(note, index in standalone_flags)
+                for index, note in enumerate(bar.notes)
             )
         )
         return left_symbol_space + note_space + right_symbol_space
@@ -427,7 +429,31 @@ class Score:
             right = max(right, 5.0)
         return left, right
 
-    def _note_horizontal_extents(self, note: Note) -> tuple[float, float]:
+    @staticmethod
+    def _standalone_flag_indices(bar: Bar) -> set[int]:
+        """Return indices of short notes that will receive standalone flags."""
+        standalone: set[int] = set()
+        group: list[int] = []
+
+        def finish_group() -> None:
+            if len(group) == 1:
+                standalone.add(group[0])
+            group.clear()
+
+        for index, note in enumerate(bar.notes):
+            if note.duration in (8, 16) and not note.rest:
+                group.append(index)
+                if note.beam_break_after:
+                    finish_group()
+            elif group:
+                finish_group()
+        if group:
+            finish_group()
+        return standalone
+
+    def _note_horizontal_extents(
+        self, note: Note, standalone_flag: bool = False
+    ) -> tuple[float, float]:
         """Return symbol extents to the left and right of a note's center."""
         s = self.style
         scale = self._note_scale(note)
@@ -441,6 +467,12 @@ class Score:
             # units beyond the notehead and subsequent dots are five apart.
             last_dot_center = note_width / 2 + 4.0 * scale + (note.dots - 1) * 5.0 * scale
             right = max(right, last_dot_center + 1.45 * scale)
+        if standalone_flag:
+            # The standalone flag curves to the right of the stem. These are
+            # conservative allowances for the two flag profiles below.
+            stem_offset = note_width / 2 if (note.small or note.step < 0.5) else -note_width / 2
+            flag_reach = 12.0 if note.duration == 8 else 10.0
+            right = max(right, stem_offset + flag_reach * scale)
         return left, right
 
     @staticmethod
@@ -463,7 +495,11 @@ class Score:
         left_symbol_space, right_symbol_space = self._bar_symbol_space(bar)
         content_left = x + left_symbol_space
         content_right = x + width - right_symbol_space
-        extents = [self._note_horizontal_extents(note) for note in bar.notes]
+        standalone_flags = self._standalone_flag_indices(bar)
+        extents = [
+            self._note_horizontal_extents(note, index in standalone_flags)
+            for index, note in enumerate(bar.notes)
+        ]
         required_width = sum(left + right for left, right in extents)
         leftover = max(0.0, content_right - content_left - required_width)
         gap = leftover / (len(bar.notes) + 1)
@@ -777,24 +813,34 @@ class Score:
         """Draw one eighth-note flag or two sixteenth-note flags."""
         ink = self.style.ink
         count = 1 if duration == 8 else 2
+        vertical = 1.0 if stem_up else -1.0
         for index in range(count):
-            offset = index * 5.0 * scale
-            if stem_up:
-                y = stem_end + offset
-                svg.path(
-                    f"M {stem_x:g} {y:g} q {7 * scale:g} {2 * scale:g} "
-                    f"{10 * scale:g} {7 * scale:g} q {-5 * scale:g} {-2 * scale:g} "
-                    f"{-10 * scale:g} {-2 * scale:g} Z",
-                    fill=ink,
+            # The eighth-note hook is compact enough to clear its notehead;
+            # sixteenth-note hooks are shorter again so the pair does not
+            # collide with nearby notes.
+            # Give the second sixteenth flag a little more breathing room
+            # from the flag attached directly to the stem end.
+            offset = index * 8.0 * scale
+            y = stem_end + vertical * offset
+            if duration == 8:
+                path = (
+                    f"M {stem_x:g} {y:g} q {1 * scale:g} 0 {2 * scale:g} {2 * vertical * scale:g} "
+                    f"q {5 * scale:g} {4 * vertical * scale:g} {7 * scale:g} {10 * vertical * scale:g} "
+                    f"q {2 * scale:g} {5 * vertical * scale:g} {-1 * scale:g} {8 * vertical * scale:g} "
+                    f"q {-1 * scale:g} {3 * vertical * scale:g} {-3 * scale:g} {3 * vertical * scale:g} "
+                    f"q {2 * scale:g} {-6 * vertical * scale:g} 0 {-11 * vertical * scale:g} "
+                    f"q {-2 * scale:g} {-5 * vertical * scale:g} {-5 * scale:g} {-7 * vertical * scale:g} Z"
                 )
             else:
-                y = stem_end - offset
-                svg.path(
-                    f"M {stem_x:g} {y:g} q {7 * scale:g} {-2 * scale:g} "
-                    f"{10 * scale:g} {-7 * scale:g} q {-5 * scale:g} {2 * scale:g} "
-                    f"{-10 * scale:g} {2 * scale:g} Z",
-                    fill=ink,
+                path = (
+                    f"M {stem_x:g} {y:g} q {0.75 * scale:g} 0 {1.5 * scale:g} {1.2 * vertical * scale:g} "
+                    f"q {4 * scale:g} {2 * vertical * scale:g} {6 * scale:g} {6 * vertical * scale:g} "
+                    f"q {1.5 * scale:g} {3 * vertical * scale:g} {-1 * scale:g} {6 * vertical * scale:g} "
+                    f"q {-0.5 * scale:g} {1.5 * vertical * scale:g} {-2 * scale:g} {2 * vertical * scale:g} "
+                    f"q {1 * scale:g} {-3.5 * vertical * scale:g} 0 {-6 * vertical * scale:g} "
+                    f"q {-1.5 * scale:g} {-2 * vertical * scale:g} {-4.5 * scale:g} {-5 * vertical * scale:g} Z"
                 )
+            svg.path(path, fill=ink)
 
     def _note_y(self, note: Note, staff_top: float) -> float:
         return staff_top + 2 * self.style.staff_gap - note.step * (self.style.staff_gap / 2)
